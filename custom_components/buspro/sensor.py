@@ -19,10 +19,16 @@ from homeassistant.const import (
     CONF_UNIT_OF_MEASUREMENT,
     ILLUMINANCE, 
     TEMPERATURE,
-    HUMIDITY,
     CONF_DEVICE_CLASS, 
     CONF_SCAN_INTERVAL,
+    DEVICE_CLASS_HUMIDITY,
+    PERCENTAGE
 )
+
+from .const import (
+    HUMIDITY
+)
+
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 
@@ -150,7 +156,7 @@ class BusproSensor(Entity):
             return connected and self._current_temperature is not None
 
         if self._sensor_type == HUMIDITY:
-            return connected and self._current_humidity is not None
+            return connected and self._humidity is not None
 
         if self._sensor_type == ILLUMINANCE:
             return connected and self._brightness is not None
@@ -164,6 +170,9 @@ class BusproSensor(Entity):
         if self._sensor_type == ILLUMINANCE:
             return self._brightness
 
+        if self._sensor_type == HUMIDITY:
+            return self._humidity            
+
     @property
     def _current_temperature(self):
         if self._temperature is None:
@@ -174,10 +183,7 @@ class BusproSensor(Entity):
             temperature = temperature + int(self._offset)
 
         return temperature
-
-    @property
-    def _current_humidity(self):
-        return self._humidity
+        
 
     @property
     def device_class(self):

@@ -166,3 +166,4 @@ fabric.properties
 # Editor-based Rest Client
 .idea
 venv
+custom_components/buspro/test.py

@@ -92,6 +92,10 @@ class OperateCode(Enum):
     ReadSensorsInOneStatus = b'\x16\x04'
     ReadSensorsInOneStatusResponse = b'\x16\x05'
 
+    ReadTemperatureStatus = b'\xE3\xE7'
+    ReadTemperatureStatusResponse = b'\xE3\xE8'
+
+
     """
     # 
     # 

@@ -1,8 +1,9 @@
 import asyncio
+import struct
 
 # from ..helpers.generics import Generics
 from .control import _ReadSensorStatus, _ReadStatusOfUniversalSwitch, _ReadStatusOfChannels, _ReadFloorHeatingStatus, \
-    _ReadDryContactStatus, _ReadSensorsInOneStatus
+    _ReadDryContactStatus, _ReadSensorsInOneStatus, _ReadTemperatureStatus
 from .device import Device
 from ..helpers.enums import *
 
@@ -67,6 +68,10 @@ class Sensor(Device):
             self._dry_contact_2_status = telegram.payload[6]
             self._brightness = brightness_high + brightness_low
             self._call_device_updated()
+
+        elif telegram.operate_code == OperateCode.ReadTemperatureStatusResponse:
+            if self._channel_number == telegram.payload[0]:
+                self._temperature = struct.unpack('>8h', telegram.payload[1])
 
         elif telegram.operate_code == OperateCode.BroadcastSensorStatusAutoResponse:
             self._current_temperature = telegram.payload[0]
@@ -134,6 +139,11 @@ class Sensor(Device):
             rsous.subnet_id, rsous.device_id = self._device_address
             rsous.switch_number = self._universal_switch_number
             await rsous.send()
+        elif self._device is not None and self._channel_number is not None and self._device == "temperature":
+            rts = _ReadTemperatureStatus(self._buspro)
+            rts.subnet_id, rts.device_id = self._device_address
+            rts.channel_number = self._channel_number
+            await rts.send()
         elif self._channel_number is not None:
             rsoc = _ReadStatusOfChannels(self._buspro)
             rsoc.subnet_id, rsoc.device_id = self._device_address
@@ -163,6 +173,8 @@ class Sensor(Device):
         if self._device is not None and self._device == "dlp":
             return self._current_temperature
         if self._device is not None and self._device == "12in1":
+            return self._current_temperature
+        if self._device is not None and self._device == "temperature":
             return self._current_temperature
         return self._current_temperature - 20
 

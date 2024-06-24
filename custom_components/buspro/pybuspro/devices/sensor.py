@@ -144,6 +144,11 @@ class Sensor(Device):
             rts.subnet_id, rts.device_id = self._device_address
             rts.channel_number = self._channel_number
             await rts.send()
+        elif self._device is not None and self._device == "itouch":
+            rts = _ReadTemperatureStatus(self._buspro)
+            rts.subnet_id, rts.device_id = self._device_address
+            rts.channel_number = 1
+            await rts.send()
         elif self._channel_number is not None:
             rsoc = _ReadStatusOfChannels(self._buspro)
             rsoc.subnet_id, rsoc.device_id = self._device_address

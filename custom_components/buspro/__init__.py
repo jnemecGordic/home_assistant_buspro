@@ -10,8 +10,8 @@ import logging
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.const import (
-    CONF_HOST, 
-    CONF_PORT, 
+    CONF_BROADCAST_ADDRESS,
+    CONF_BROADCAST_PORT,
     CONF_NAME,
 )
 from homeassistant.const import (
@@ -64,8 +64,8 @@ SERVICE_BUSPRO_UNIVERSAL_SWITCH_SCHEMA = vol.Schema({
 
 CONFIG_SCHEMA = vol.Schema({
     DOMAIN: vol.Schema({
-        vol.Required(CONF_HOST): cv.string,
-        vol.Required(CONF_PORT): cv.port,
+        vol.Required(CONF_BROADCAST_ADDRESS): cv.string,
+        vol.Required(CONF_BROADCAST_PORT): cv.port,
         vol.Optional(CONF_NAME, default=DEFAULT_CONF_NAME): cv.string
     })
 }, extra=vol.ALLOW_EXTRA)
@@ -75,8 +75,8 @@ async def async_setup(hass: HomeAssistant, config: dict):
     if DOMAIN not in config:
         return True
 
-    host = config[DOMAIN][CONF_HOST]
-    port = config[DOMAIN][CONF_PORT]
+    host = config[DOMAIN][CONF_BROADCAST_ADDRESS]
+    port = config[DOMAIN][CONF_BROADCAST_PORT]
 
     hass.data[DATA_BUSPRO] = BusproModule(hass, host, port)
     await hass.data[DATA_BUSPRO].start()
@@ -89,8 +89,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     """Setup the Buspro component. """
     hass.data.setdefault(DOMAIN, {})
 
-    host = config_entry.data.get(CONF_HOST, "")
-    port = config_entry.data.get(CONF_PORT, 1)
+    host = config_entry.data.get(CONF_BROADCAST_ADDRESS, "192.168.10.255")
+    port = config_entry.data.get(CONF_BROADCAST_PORT, 6000)
 
     hass.data[DOMAIN] = BusproModule(hass, host, port)
     await hass.data[DOMAIN].start()

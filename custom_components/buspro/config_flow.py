@@ -1,26 +1,17 @@
-import aiohttp
-import asyncio
-import json
-
-from collections import namedtuple
-from typing import Dict, List, Tuple
-import requests
-import re
-
 import logging
-import voluptuous as vol
 
-from homeassistant import config_entries, exceptions
-from homeassistant.core import HomeAssistant
-from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
+from homeassistant import config_entries
 
 from .const import (
     DOMAIN,
-    CONF_HOST,
-    CONF_PORT
 )
 
+from homeassistant.const import (
+    CONF_BROADCAST_ADDRESS,
+    CONF_BROADCAST_PORT,
+)
 _LOGGER = logging.getLogger(__name__)
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -44,10 +35,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
 
             data_schema=vol.Schema({
-            	#vol.Required(CONF_HOST, default=host): cv.string,
-            	#vol.Required(CONF_PORT, default=port): cv.port
-            	vol.Required(CONF_HOST): cv.string,
-            	vol.Required(CONF_PORT): cv.port
+            	vol.Required(CONF_BROADCAST_ADDRESS, default="192.168.10.255"): cv.string,
+            	vol.Required(CONF_BROADCAST_PORT, default=6000): cv.port
+            	#vol.Required(CONF_BROADCAST_ADDRESS): cv.string,
+            	#vol.Required(CONF_BROADCAST_PORT): cv.port
             }),
             errors=errors
         )

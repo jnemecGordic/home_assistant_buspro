@@ -73,7 +73,10 @@ class BusproSwitch(SwitchEntity):
     @property
     def should_poll(self):
         """No polling needed within Buspro."""
-        return False
+        return True
+
+    async def async_update(self):
+        await self._device.read_status()
 
     @property
     def name(self):

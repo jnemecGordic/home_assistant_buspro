@@ -1,4 +1,4 @@
-from .control import _SingleChannelControl
+from .control import _SingleChannelControl, _ReadStatusOfSwitch
 from .device import Device
 from ..helpers.enums import *
 from ..helpers.generics import Generics
@@ -40,7 +40,9 @@ class Switch(Device):
         await self._set(intensity, 0)
 
     async def read_status(self):
-        raise NotImplementedError
+        rsos = _ReadStatusOfSwitch(self._buspro)
+        rsos.subnet_id, rsos.device_id = self._device_address
+        await rsos.send()
 
     @property
     def supports_brightness(self):

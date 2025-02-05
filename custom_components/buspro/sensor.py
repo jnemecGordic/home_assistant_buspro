@@ -12,26 +12,21 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import (
-    CONF_NAME, 
-    CONF_DEVICES, 
-    CONF_ADDRESS, 
-    CONF_TYPE, 
+    CONF_NAME,
+    CONF_DEVICES,
+    CONF_ADDRESS,
+    CONF_TYPE,
     CONF_UNIT_OF_MEASUREMENT,
-    ILLUMINANCE, 
+    ILLUMINANCE,
     TEMPERATURE,
-    CONF_DEVICE_CLASS, 
-    CONF_SCAN_INTERVAL,
-    DEVICE_CLASS_HUMIDITY,
-    PERCENTAGE
-)
-
-from .const import (
-    HUMIDITY
+    CONF_DEVICE_CLASS,
+    CONF_SCAN_INTERVAL
 )
 
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 
+from .const import HUMIDITY
 from ..buspro import DATA_BUSPRO
 
 DEFAULT_CONF_UNIT_OF_MEASUREMENT = ""

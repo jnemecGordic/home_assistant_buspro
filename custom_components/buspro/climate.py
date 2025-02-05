@@ -21,7 +21,7 @@ from homeassistant.const import (
     CONF_NAME,
     CONF_DEVICES,
     CONF_ADDRESS,
-    TEMP_CELSIUS,
+    UnitOfTemperature,
     ATTR_TEMPERATURE,
 )
 from homeassistant.core import callback
@@ -182,7 +182,7 @@ class BusproClimate(ClimateEntity):
     @property
     def temperature_unit(self):
         """Return the unit of measurement."""
-        return TEMP_CELSIUS
+        return UnitOfTemperature.CELSIUS
 
     @property
     def current_temperature(self):

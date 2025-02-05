@@ -20,7 +20,7 @@ class Sensor(Device):
         self._name = name
         self._device = device
         self._switch_number = switch_number
-        
+
         self._current_temperature = None
         self._current_humidity = None
         self._brightness = None
@@ -182,6 +182,12 @@ class Sensor(Device):
         if self._device is not None and self._device == "temperature":
             return self._current_temperature
         return self._current_temperature - 20
+
+    @property
+    def humidity(self):
+        if self._current_humidity is None:
+            return 0
+        return self._current_humidity
 
     @property
     def brightness(self):

@@ -20,6 +20,8 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
+from custom_components.buspro.scheduler import Scheduler
+
 _LOGGER = logging.getLogger(__name__)
 
 DOMAIN = "buspro"
@@ -109,6 +111,8 @@ class BusproModule:
         self.hdl = None
         self.gateway_address_send_receive = ((host, port), ('', port))
         self.init_hdl()
+        self.scheduler = Scheduler(hass)
+
 
     def init_hdl(self):
         """Initialize of Buspro object."""
@@ -122,6 +126,7 @@ class BusproModule:
         await self.hdl.start(state_updater=False)
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self.stop)
         self.connected = True
+        self.hass.loop.create_task(self.scheduler.read_entities_periodically())
 
     # noinspection PyUnusedLocal
     async def stop(self, event):

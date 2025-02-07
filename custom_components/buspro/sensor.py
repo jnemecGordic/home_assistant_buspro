@@ -110,9 +110,6 @@ class BusproSensor(Entity):
         self._brightness = None
         self._humidity = None
 
-        self._should_poll = False
-        if scan_interval > 0:
-            self._should_poll = True
 
     @callback
     def async_register_callbacks(self):
@@ -132,7 +129,7 @@ class BusproSensor(Entity):
     @property
     def should_poll(self):
         """No polling needed within Buspro unless explicitly set."""
-        return self._should_poll
+        return False
 
     async def async_update(self):
         await self._device.read_sensor_status()

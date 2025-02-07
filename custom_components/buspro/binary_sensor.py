@@ -145,7 +145,7 @@ class BusproBinarySensor(BinarySensorEntity):
     @property
     def should_poll(self):
         """No polling needed within Buspro."""
-        return self._should_poll
+        return False
 
     async def async_update(self):
         if self._sensor_type == CONF_UNIVERSAL_SWITCH:

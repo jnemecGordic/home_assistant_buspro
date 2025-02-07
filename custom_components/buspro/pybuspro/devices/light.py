@@ -1,4 +1,4 @@
-﻿from .control import _SingleChannelControl
+﻿from .control import _SingleChannelControl, _ReadStatusOfChannels
 from .device import Device
 from ..helpers.enums import *
 from ..helpers.generics import Generics
@@ -50,7 +50,9 @@ class Light(Device):
         await self._set(intensity, running_time_seconds)
 
     async def read_status(self):
-        raise NotImplementedError
+        rsoch = _ReadStatusOfChannels(self._buspro)
+        rsoch.subnet_id, rsoch.device_id = self._device_address
+        await rsoch.send()
 
     @property
     def device_identifier(self):

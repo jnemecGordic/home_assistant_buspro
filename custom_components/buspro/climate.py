@@ -169,6 +169,10 @@ class BusproClimate(ClimateEntity):
         """No polling needed within Buspro."""
         return False
 
+    async def async_update(self):
+        """Default async_update method that does nothing."""
+        pass
+
     @property
     def name(self):
         """Return the display name of this light."""

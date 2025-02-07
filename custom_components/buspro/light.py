@@ -98,6 +98,9 @@ class BusproLight(LightEntity):
         """No polling needed within Buspro."""
         return False
 
+    async def async_update(self):
+        await self._device.read_status()
+
     @property
     def name(self):
         """Return the display name of this light."""

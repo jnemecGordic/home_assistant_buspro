@@ -141,8 +141,7 @@ class BusproBinarySensor(BinarySensorEntity):
         return False
 
     async def async_update(self):
-        if self._sensor_type == CONF_UNIVERSAL_SWITCH:
-            await self._device.read_sensor_status()
+        await self._device.read_sensor_status()
 
     @property
     def name(self):

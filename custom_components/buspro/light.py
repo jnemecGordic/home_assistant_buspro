@@ -15,7 +15,7 @@ from homeassistant.components.light import (
     PLATFORM_SCHEMA, 
     ATTR_BRIGHTNESS
 )
-from homeassistant.const import (CONF_NAME, CONF_DEVICES)
+from homeassistant.const import (CONF_NAME, CONF_DEVICES, CONF_SCAN_INTERVAL)
 from homeassistant.core import callback
 
 from ..buspro import DATA_BUSPRO
@@ -29,6 +29,7 @@ DEFAULT_DIMMABLE = True
 DEVICE_SCHEMA = vol.Schema({
     vol.Optional("running_time", default=DEFAULT_DEVICE_RUNNING_TIME): cv.positive_int,
     vol.Optional("dimmable", default=DEFAULT_DIMMABLE): cv.boolean,
+    vol.Optional(CONF_SCAN_INTERVAL, default=0): cv.positive_int,
     vol.Required(CONF_NAME): cv.string,
 })
 
@@ -50,6 +51,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 
     for address, device_config in config[CONF_DEVICES].items():
         name = device_config[CONF_NAME]
+        scan_interval = device_config[CONF_SCAN_INTERVAL]
         device_running_time = int(device_config["running_time"])
         dimmable = bool(device_config["dimmable"])
 
@@ -64,7 +66,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         _LOGGER.debug("Adding light '{}' with address {} and channel number {}".format(name, device_address, channel_number))
 
         light = Light(hdl, device_address, channel_number, name)
-        devices.append(BusproLight(hass, light, device_running_time, dimmable))
+        devices.append(BusproLight(hass, light, device_running_time, dimmable,scan_interval))
 
     async_add_entites(devices)
 
@@ -73,14 +75,20 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 class BusproLight(LightEntity):
     """Representation of a Buspro light."""
 
-    def __init__(self, hass, device, running_time, dimmable):
+    def __init__(self, hass, device, running_time, dimmable,scan_interval):
         self._hass = hass
         self._device = device
         self._running_time = running_time
         self._dimmable = dimmable
         self._attr_color_mode = ColorMode.BRIGHTNESS
         self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+        self._scan_interval = scan_interval
         self.async_register_callbacks()
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        _LOGGER.debug("Added light '{}' scan interval {}".format(self._device.name, self.scan_interval))
+        await self._hass.data[DATA_BUSPRO].entity_initialized(self)
 
     @callback
     def async_register_callbacks(self):
@@ -121,6 +129,11 @@ class BusproLight(LightEntity):
     def is_on(self):
         """Return true if light is on."""
         return self._device.is_on
+
+    @property
+    def scan_interval(self):
+        """Return the scan interval of the light."""
+        return self._scan_interval
 
     async def async_turn_on(self, **kwargs):
         """Instruct the light to turn on."""

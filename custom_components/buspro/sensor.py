@@ -6,7 +6,6 @@ https://home-assistant.io/components/...
 """
 
 import logging
-from datetime import timedelta
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -22,7 +21,6 @@ from homeassistant.const import (
     CONF_DEVICE_CLASS,
     CONF_SCAN_INTERVAL
 )
-
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 
@@ -31,11 +29,10 @@ from ..buspro import DATA_BUSPRO
 
 DEFAULT_CONF_UNIT_OF_MEASUREMENT = ""
 DEFAULT_CONF_DEVICE_CLASS = "None"
-DEFAULT_CONF_SCAN_INTERVAL = 0
 DEFAULT_CONF_OFFSET = 0
 CONF_DEVICE = "device"
 CONF_OFFSET = "offset"
-SCAN_INTERVAL = timedelta(minutes=2)
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,7 +52,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
                 vol.Optional(CONF_UNIT_OF_MEASUREMENT, default=DEFAULT_CONF_UNIT_OF_MEASUREMENT): cv.string,
                 vol.Optional(CONF_DEVICE_CLASS, default=DEFAULT_CONF_DEVICE_CLASS): cv.string,
                 vol.Optional(CONF_DEVICE, default=None): cv.string,
-                vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_CONF_SCAN_INTERVAL): cv.string,
+                vol.Optional(CONF_SCAN_INTERVAL, default=0): cv.positive_int,
                 vol.Optional(CONF_OFFSET, default=DEFAULT_CONF_OFFSET): cv.string,
             })
         ])
@@ -79,10 +76,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         offset = device_config[CONF_OFFSET]
         
         scan_interval = device_config[CONF_SCAN_INTERVAL]
-        interval = 0
-        if scan_interval is not None:
-            interval = int(scan_interval)
-            
+
         address2 = address.split('.')
         device_address = (int(address2[0]), int(address2[1]))
 
@@ -91,7 +85,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 
         sensor = Sensor(hdl, device_address, device=device, name=name)
 
-        devices.append(BusproSensor(hass, sensor, sensor_type, interval, offset))
+        devices.append(BusproSensor(hass, sensor, sensor_type, scan_interval, offset))
 
     async_add_entites(devices)
 
@@ -109,7 +103,12 @@ class BusproSensor(Entity):
         self._temperature = None
         self._brightness = None
         self._humidity = None
+        self._scan_interval = scan_interval
 
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        _LOGGER.debug("Added sensor '{}' scan interval {}".format(self._device.name, self.scan_interval))
+        await self._hass.data[DATA_BUSPRO].entity_initialized(self)
 
     @callback
     def async_register_callbacks(self):
@@ -202,11 +201,15 @@ class BusproSensor(Entity):
     @property
     def extra_state_attributes(self):
         """Return the state attributes."""
-        attributes = {}
-        attributes['state_class'] = "measurement"
+        attributes = {'state_class': "measurement"}
         return attributes
 
     @property
     def unique_id(self):
         """Return the unique id."""
         return f"{self._device.device_identifier}-{self._sensor_type}"
+
+    @property
+    def scan_interval(self):
+        """Return the scan interval of the sensor."""
+        return self._scan_interval

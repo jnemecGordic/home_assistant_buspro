@@ -89,8 +89,8 @@ class TelegramHelper:
         if telegram.source_address is not None:
             sender_subnet_id, sender_device_id = telegram.source_address
         else:
-            sender_subnet_id = 200
-            sender_device_id = 200
+            sender_subnet_id = 254
+            sender_device_id = 253
 
         send_buf.append(sender_subnet_id)
         send_buf.append(sender_device_id)

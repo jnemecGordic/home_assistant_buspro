@@ -22,7 +22,7 @@ from homeassistant.const import (
     CONF_DEVICES,
     CONF_ADDRESS,
     UnitOfTemperature,
-    ATTR_TEMPERATURE,
+    ATTR_TEMPERATURE, CONF_SCAN_INTERVAL,
 )
 from homeassistant.core import callback
 
@@ -66,6 +66,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
                     cv.ensure_list, [vol.In(HA_PRESET_TO_HDL)]
                 ),
                 vol.Optional(CONF_RELAY_ADDRESS, default=''): cv.string,
+                vol.Optional(CONF_SCAN_INTERVAL, default=0): cv.positive_int,
             })
         ])
 })
@@ -88,6 +89,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 
         address2 = address.split('.')
         device_address = (int(address2[0]), int(address2[1]))
+        scan_interval = device_config[CONF_SCAN_INTERVAL]
 
         _LOGGER.debug("Adding climate '{}' with address {}".format(name, device_address))
 
@@ -101,7 +103,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
             relay_channel_number = int(relay_address2[2])
             relay_sensor = Sensor(hdl, relay_device_address, channel_number=relay_channel_number)
 
-        devices.append(BusproClimate(hass, climate, preset_modes, relay_sensor))
+        devices.append(BusproClimate(hass, climate, preset_modes, relay_sensor, scan_interval))
 
     async_add_entites(devices)
 
@@ -110,9 +112,10 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 class BusproClimate(ClimateEntity):
     """Representation of a Buspro switch."""
 
-    def __init__(self, hass, device, preset_modes, relay_sensor):
+    def __init__(self, hass, device, preset_modes, relay_sensor, scan_interval):
         self._hass = hass
         self._device = device
+        self._scan_interval = scan_interval
         self._target_temperature = self._device.target_temperature
         self._is_on = self._device.is_on
         self._preset_modes = preset_modes
@@ -127,6 +130,11 @@ class BusproClimate(ClimateEntity):
         self._attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
 
         self.async_register_callbacks()
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        _LOGGER.debug("Added climate '{}' scan interval {}".format(self._device.name, self.scan_interval))
+        await self._hass.data[DATA_BUSPRO].entity_initialized(self)
 
     async def async_turn_off(self) -> None:
         await self.async_set_hvac_mode(HVACMode.OFF)
@@ -288,6 +296,11 @@ class BusproClimate(ClimateEntity):
     def unique_id(self):
         """Return the unique id."""
         return self._device.device_identifier
+
+    @property
+    def scan_interval(self):
+        """Return the scan interval of the climate."""
+        return self._scan_interval
 
     async def async_set_temperature(self, **kwargs):
         """Set new target temperature."""

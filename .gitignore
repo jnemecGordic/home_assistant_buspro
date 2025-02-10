@@ -167,3 +167,4 @@ fabric.properties
 .idea
 venv
 custom_components/buspro/test.py
+deploy.sh

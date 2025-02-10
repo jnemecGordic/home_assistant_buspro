@@ -4,7 +4,7 @@ Support for Buspro devices.
 For more details about this component, please refer to the documentation at
 https://home-assistant.io/...
 """
-
+import asyncio
 import logging
 
 import homeassistant.helpers.config_validation as cv
@@ -73,7 +73,7 @@ CONFIG_SCHEMA = vol.Schema({
 }, extra=vol.ALLOW_EXTRA)
 
 async def async_setup(hass: HomeAssistant, config: dict):
-    """Setup the Buspro component. """
+    """Setup the Buspro component."""
     if DOMAIN not in config:
         return True
 
@@ -85,10 +85,13 @@ async def async_setup(hass: HomeAssistant, config: dict):
 
     hass.data[DATA_BUSPRO].register_services()
 
+    # Start the scheduler after setting up entities
+    hass.async_create_task(hass.data[DATA_BUSPRO].start_scheduler())
+
     return True
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
-    """Setup the Buspro component. """
+    """Setup the Buspro component."""
     hass.data.setdefault(DOMAIN, {})
 
     host = config_entry.data.get(CONF_BROADCAST_ADDRESS, "192.168.10.255")
@@ -99,39 +102,42 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
     hass.data[DOMAIN].register_services()
 
+    # Start the scheduler after setting up entities
+    hass.async_create_task(hass.data[DOMAIN].start_scheduler())
+
     return True
 
-class BusproModule:
-    """Representation of Buspro Object."""
 
+class BusproModule:
     def __init__(self, hass, host, port):
-        """Initialize of Buspro module."""
         self.hass = hass
         self.connected = False
         self.hdl = None
         self.gateway_address_send_receive = ((host, port), ('', port))
         self.init_hdl()
         self.scheduler = Scheduler(hass)
-
+        self.entity_lock = asyncio.Lock()
 
     def init_hdl(self):
-        """Initialize of Buspro object."""
-        # noinspection PyUnresolvedReferences
         from .pybuspro.buspro import Buspro
         self.hdl = Buspro(self.gateway_address_send_receive, self.hass.loop)
-        # self.hdl.register_telegram_received_all_messages_cb(self.telegram_received_cb)
 
     async def start(self):
-        """Start Buspro object. Connect to tunneling device."""
         await self.hdl.start(state_updater=False)
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self.stop)
         self.connected = True
-        self.hass.loop.create_task(self.scheduler.read_entities_periodically())
 
-    # noinspection PyUnusedLocal
+    async def start_scheduler(self):
+        await self.scheduler.read_entities_periodically()
+
     async def stop(self, event):
-        """Stop Buspro object. Disconnect from tunneling device."""
         await self.hdl.stop()
+
+    async def entity_initialized(self, entity):
+        async with self.entity_lock:
+            _LOGGER.debug(f"Entity initialized: {entity.entity_id} with scan interval {entity.scan_interval}")
+            await self.scheduler.add_entity(entity)
+
 
     async def service_activate_scene(self, call):
         """Service for activatign a __scene"""

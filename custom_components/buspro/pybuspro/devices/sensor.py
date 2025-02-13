@@ -153,25 +153,12 @@ class Sensor(Device):
 
 
     async def read_sensor_status(self):
-        if self._universal_switch_number is not None:
-            rsous = _ReadStatusOfUniversalSwitch(self._buspro)
-            rsous.subnet_id, rsous.device_id = self._device_address
-            rsous.switch_number = self._universal_switch_number
-            await rsous.send()
-        elif self._sensor_type == SensorType.TEMPERATURE and self._channel_number is not None:
-            rts = _ReadTemperatureStatus(self._buspro)
-            rts.subnet_id, rts.device_id = self._device_address
-            rts.channel_number = self._channel_number
-            await rts.send()
-        elif self._device_class == DeviceClass.ITOUCH:
+
+        if self._device_class == DeviceClass.ITOUCH:
             rts = _ReadTemperatureStatus(self._buspro)
             rts.subnet_id, rts.device_id = self._device_address
             rts.channel_number = 1
             await rts.send()
-        elif self._channel_number is not None:
-            rsoc = _ReadStatusOfChannels(self._buspro)
-            rsoc.subnet_id, rsoc.device_id = self._device_address
-            await rsoc.send()
         elif self._device_class == DeviceClass.DLP:
             rfhs = _ReadFloorHeatingStatus(self._buspro)
             rfhs.subnet_id, rfhs.device_id = self._device_address
@@ -189,6 +176,20 @@ class Sensor(Device):
             rdcs.subnet_id, rdcs.device_id = self._device_address
             rdcs.switch_number = self._switch_number
             await rdcs.send()
+        elif self._universal_switch_number is not None:
+            rsous = _ReadStatusOfUniversalSwitch(self._buspro)
+            rsous.subnet_id, rsous.device_id = self._device_address
+            rsous.switch_number = self._universal_switch_number
+            await rsous.send()
+        elif self._sensor_type == SensorType.TEMPERATURE and self._channel_number is not None:
+            rts = _ReadTemperatureStatus(self._buspro)
+            rts.subnet_id, rts.device_id = self._device_address
+            rts.channel_number = self._channel_number
+            await rts.send()
+        elif self._channel_number is not None:
+            rsoc = _ReadStatusOfChannels(self._buspro)
+            rsoc.subnet_id, rsoc.device_id = self._device_address
+            await rsoc.send()
 
 
     @property

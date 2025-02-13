@@ -6,7 +6,7 @@ import logging
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.binary_sensor import PLATFORM_SCHEMA, BinarySensorEntity
-from homeassistant.const import CONF_NAME, CONF_DEVICES, CONF_ADDRESS, CONF_TYPE, CONF_DEVICE_CLASS, CONF_SCAN_INTERVAL
+from homeassistant.const import CONF_NAME, CONF_DEVICES, CONF_ADDRESS, CONF_TYPE, CONF_DEVICE, CONF_SCAN_INTERVAL
 from homeassistant.core import callback
 
 from custom_components.buspro.pybuspro.devices.sensor import SensorType
@@ -14,7 +14,7 @@ from ..buspro import DATA_BUSPRO
 
 _LOGGER = logging.getLogger(__name__)
 
-DEFAULT_CONF_DEVICE_CLASS = "None"
+DEFAULT_CONF_DEVICE = "None"
 DEFAULT_CONF_SCAN_INTERVAL = 0
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
@@ -24,7 +24,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
                 vol.Required(CONF_ADDRESS): cv.string,
                 vol.Required(CONF_NAME): cv.string,
                 vol.Required(CONF_TYPE): cv.string,  # Expecting string from config
-                vol.Optional(CONF_DEVICE_CLASS, default=DEFAULT_CONF_DEVICE_CLASS): cv.string,
+                vol.Optional(CONF_DEVICE, default=DEFAULT_CONF_DEVICE): cv.string,
                 vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_CONF_SCAN_INTERVAL): cv.positive_int,
             })
         ])
@@ -43,7 +43,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         address = device_config[CONF_ADDRESS]
         name = device_config[CONF_NAME]
         sensor_type_str = device_config[CONF_TYPE]  # Get sensor type as string
-        device_class_str = device_config[CONF_DEVICE_CLASS]
+        device_class_str = device_config[CONF_DEVICE]
 
         # Convert string representations to enums
         try:

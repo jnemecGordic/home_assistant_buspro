@@ -64,8 +64,7 @@ sensor:
       - address: 1.74
         name: Living Room
         type: temperature
-        unit_of_measurement: °C
-        device_class: dlp
+        device: dlp
       - address: 1.74
         name: Front Door
         type: illuminance
@@ -76,14 +75,14 @@ sensor:
   + **name** _(string) (Required)_: The name of the device
   + **type** _(string) (Required)_: Type of sensor to monitor. 
     + Available sensors: 
-     + temperature     
-     + humidity
-     + illuminance
+      + temperature     
+      + humidity
+      + illuminance
   + **unit_of_measurement** _(string) (Optional)_: text to be displayed as unit of measurement
-  + **device_class** _(string) (Optional)_: The type of sensor device
+  + **device** _(string) (Optional)_: The type of HDL sensor device
     + Available classes: 
       + 12in1
-      + sensors_in_one      
+      + sensors_in_one (devices like 7 in 1)
       + itouch
       + dlp    
   
@@ -98,8 +97,7 @@ binary_sensor:
     devices:
       - address: 1.74
         name: Living Room
-        type: motion
-        device_class: motion
+        type: motion        
       - address: 1.74.100
         name: Front Door
         type: universal_switch
@@ -118,8 +116,10 @@ binary_sensor:
       + dry_contact_2
       + universal_switch
       + single_channel
-  + **device_class** _(string) (Optional)_: HASS device class e.g., "motion" 
-  (https://www.home-assistant.io/components/binary_sensor/)
+  + **device** _(string) (Optional)_: The type of HDL sensor device
+    + Available classes: 
+      + 12in1
+      + sensors_in_one (devices like 7 in 1)
 
 #### Climate platform
 

@@ -19,18 +19,17 @@ from homeassistant.const import (
     CONF_ADDRESS,
     CONF_TYPE,
     CONF_UNIT_OF_MEASUREMENT,
-    CONF_DEVICE_CLASS,
+    CONF_DEVICE,
     CONF_SCAN_INTERVAL
 )
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 
-from .const import HUMIDITY
 from ..buspro import DATA_BUSPRO
 from .pybuspro.devices.sensor import SensorType, DeviceClass
 
 DEFAULT_CONF_UNIT_OF_MEASUREMENT = ""
-DEFAULT_CONF_DEVICE_CLASS = "None"
+DEFAULT_CONF_DEVICE = "None"
 DEFAULT_CONF_OFFSET = 0
 CONF_OFFSET = "offset"
 
@@ -51,7 +50,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
                 vol.Required(CONF_NAME): cv.string,
                 vol.Required(CONF_TYPE): vol.In(SENSOR_TYPES),
                 vol.Optional(CONF_UNIT_OF_MEASUREMENT, default=DEFAULT_CONF_UNIT_OF_MEASUREMENT): cv.string,
-                vol.Optional(CONF_DEVICE_CLASS, default=DEFAULT_CONF_DEVICE_CLASS): cv.string,
+                vol.Optional(CONF_DEVICE, default=DEFAULT_CONF_DEVICE): cv.string,
                 vol.Optional(CONF_SCAN_INTERVAL, default=0): cv.positive_int,
                 vol.Optional(CONF_OFFSET, default=DEFAULT_CONF_OFFSET): cv.string,
             })
@@ -72,7 +71,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         address = device_config[CONF_ADDRESS]
         name = device_config[CONF_NAME]
         sensor_type_str = device_config[CONF_TYPE]
-        device_class_str = device_config[CONF_DEVICE_CLASS]
+        device_class_str = device_config[CONF_DEVICE]
         offset = device_config[CONF_OFFSET]
         scan_interval = device_config[CONF_SCAN_INTERVAL]
 

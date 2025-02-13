@@ -3,11 +3,11 @@ import struct
 from enum import Enum
 
 class SensorType(Enum):
-    NONE = None
     TEMPERATURE = "temperature"
     ILLUMINANCE = "illuminance"
     HUMIDITY = "humidity"
     MOTION = "motion"
+    SONIC = "sonic"
     DRY_CONTACT_1 = "dry_contact_1"
     DRY_CONTACT_2 = "dry_contact_2"
     UNIVERSAL_SWITCH = "universal_switch"
@@ -15,7 +15,6 @@ class SensorType(Enum):
 
 
 class DeviceClass(Enum):
-    NONE = None
     TWELVE_IN_ONE = "12in1"
     DLP = "dlp"
     ITOUCH = "itouch"
@@ -28,14 +27,14 @@ from ..helpers.enums import *
 
 
 class Sensor(Device):
-    def __init__(self, buspro, device_address,device_class=None, sensor_type=None, universal_switch_number=None, channel_number=None, device=None,
+    def __init__(self, buspro, device_address, device_class=None, sensor_type=None, universal_switch_number=None, channel_number=None, device=None,
                  switch_number=None, name="", delay_read_current_state_seconds=0):
         super().__init__(buspro, device_address, name)
 
         self._buspro = buspro
         self._device_address = device_address
-        self._sensor_type = SensorType(sensor_type)
-        self._device_class = DeviceClass(device_class)
+        self._sensor_type = SensorType(sensor_type) if sensor_type is not None else None
+        self._device_class = DeviceClass(device_class) if device_class is not None else None
         self._universal_switch_number = universal_switch_number
         self._channel_number = channel_number
         self._name = name
@@ -95,9 +94,6 @@ class Sensor(Device):
 
         elif telegram.operate_code == OperateCode.BroadcastSensorStatusAutoResponse:
             self._current_temperature = telegram.payload[0]
-            if self._device_class == DeviceClass.TWELVE_IN_ONE:
-                self._current_temperature = self._current_temperature - 20
-            
             brightness_high = telegram.payload[1]
             brightness_low = telegram.payload[2]
             self._motion_sensor = telegram.payload[3]
@@ -211,10 +207,11 @@ class Sensor(Device):
 
     @property
     def movement(self):
-        if self._motion_sensor == 1 or self._sonic == 1:
-            return True
-        if self._motion_sensor == 0 and self._sonic == 0:
-            return False
+        if self._sensor_type is None:
+            return None
+        if self._sensor_type == SensorType.SONIC:
+            return self._sonic
+        return self._motion_sensor        
 
     @property
     def dry_contact_1_is_on(self):

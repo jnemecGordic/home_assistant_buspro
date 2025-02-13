@@ -24,7 +24,6 @@ from custom_components.buspro.scheduler import Scheduler
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "buspro"
 DATA_BUSPRO = "buspro"
 DEPENDENCIES = []
 
@@ -65,7 +64,7 @@ SERVICE_BUSPRO_UNIVERSAL_SWITCH_SCHEMA = vol.Schema({
 })
 
 CONFIG_SCHEMA = vol.Schema({
-    DOMAIN: vol.Schema({
+    DATA_BUSPRO: vol.Schema({
         vol.Required(CONF_BROADCAST_ADDRESS): cv.string,
         vol.Required(CONF_BROADCAST_PORT): cv.port,
         vol.Optional(CONF_NAME, default=DEFAULT_CONF_NAME): cv.string
@@ -74,11 +73,11 @@ CONFIG_SCHEMA = vol.Schema({
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Setup the Buspro component."""
-    if DOMAIN not in config:
+    if DATA_BUSPRO not in config:
         return True
 
-    host = config[DOMAIN][CONF_BROADCAST_ADDRESS]
-    port = config[DOMAIN][CONF_BROADCAST_PORT]
+    host = config[DATA_BUSPRO][CONF_BROADCAST_ADDRESS]
+    port = config[DATA_BUSPRO][CONF_BROADCAST_PORT]
 
     hass.data[DATA_BUSPRO] = BusproModule(hass, host, port)
     await hass.data[DATA_BUSPRO].start()
@@ -92,18 +91,18 @@ async def async_setup(hass: HomeAssistant, config: dict):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Setup the Buspro component."""
-    hass.data.setdefault(DOMAIN, {})
+    hass.data.setdefault(DATA_BUSPRO, {})
 
     host = config_entry.data.get(CONF_BROADCAST_ADDRESS, "192.168.10.255")
     port = config_entry.data.get(CONF_BROADCAST_PORT, 6000)
 
-    hass.data[DOMAIN] = BusproModule(hass, host, port)
-    await hass.data[DOMAIN].start()
+    hass.data[DATA_BUSPRO] = BusproModule(hass, host, port)
+    await hass.data[DATA_BUSPRO].start()
 
-    hass.data[DOMAIN].register_services()
+    hass.data[DATA_BUSPRO].register_services()
 
     # Start the scheduler after setting up entities
-    hass.async_create_task(hass.data[DOMAIN].start_scheduler())
+    hass.async_create_task(hass.data[DATA_BUSPRO].start_scheduler())
 
     return True
 
@@ -178,19 +177,19 @@ class BusproModule:
 
         """ activate_scene """
         self.hass.services.async_register(
-            DOMAIN, SERVICE_BUSPRO_ACTIVATE_SCENE,
+            DATA_BUSPRO, SERVICE_BUSPRO_ACTIVATE_SCENE,
             self.service_activate_scene,
             schema=SERVICE_BUSPRO_ACTIVATE_SCENE_SCHEMA)
 
         """ send_message """
         self.hass.services.async_register(
-            DOMAIN, SERVICE_BUSPRO_SEND_MESSAGE,
+            DATA_BUSPRO, SERVICE_BUSPRO_SEND_MESSAGE,
             self.service_send_message,
             schema=SERVICE_BUSPRO_SEND_MESSAGE_SCHEMA)
 
         """ universal_switch """
         self.hass.services.async_register(
-            DOMAIN, SERVICE_BUSPRO_UNIVERSAL_SWITCH,
+            DATA_BUSPRO, SERVICE_BUSPRO_UNIVERSAL_SWITCH,
             self.service_set_universal_switch,
             schema=SERVICE_BUSPRO_UNIVERSAL_SWITCH_SCHEMA)
 

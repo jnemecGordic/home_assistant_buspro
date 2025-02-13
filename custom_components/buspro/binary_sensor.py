@@ -120,6 +120,9 @@ class BusproBinarySensor(BinarySensorEntity):
     def should_poll(self):
         """No polling needed within Buspro unless explicitly set."""
         return False
+    
+    async def async_update(self):
+        await self._device.read_sensor_status()
 
     @property
     def name(self):

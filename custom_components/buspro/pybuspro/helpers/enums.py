@@ -74,10 +74,13 @@ class OperateCode(Enum):
     ReadStatusOfUniversalSwitchResponse = b'\xE0\x19'
     BroadcastStatusOfUniversalSwitch = b'\xE0\x17'
 
-    BroadcastSensorStatusResponse = b'\x16\x44'
-    ReadSensorStatus = b'\x16\x45'
-    ReadSensorStatusResponse = b'\x16\x46'
-    BroadcastSensorStatusAutoResponse = b'\x16\x47'
+    Broadcast12in1SensorStatusResponse = b'\x16\x44'
+    Read12in1SensorStatus = b'\x16\x45'
+    Read12in1SensorStatusResponse = b'\x16\x46'
+    Broadcast12in1SensorStatusAutoResponse = b'\x16\x47'
+
+    ReadSensorsInOneStatus = b'\x16\x04'
+    ReadSensorsInOneStatusResponse = b'\x16\x05'
 
     BroadcastTemperatureResponse = b'\xE3\xE5'
 
@@ -88,9 +91,6 @@ class OperateCode(Enum):
 
     ReadDryContactStatus = b'\x15\xCE'
     ReadDryContactStatusResponse = b'\x15\xCF'
-
-    ReadSensorsInOneStatus = b'\x16\x04'
-    ReadSensorsInOneStatusResponse = b'\x16\x05'
 
     ReadTemperatureStatus = b'\xE3\xE7'
     ReadTemperatureStatusResponse = b'\xE3\xE8'

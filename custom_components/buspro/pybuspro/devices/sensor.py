@@ -20,7 +20,7 @@ class DeviceClass(Enum):
     ITOUCH = "itouch"
     SENSORS_IN_ONE = "sensors_in_one"
 
-from .control import _ReadSensorStatus, _ReadStatusOfUniversalSwitch, _ReadStatusOfChannels, _ReadFloorHeatingStatus, \
+from .control import _Read12in1SensorStatus, _ReadStatusOfUniversalSwitch, _ReadStatusOfChannels, _ReadFloorHeatingStatus, \
     _ReadDryContactStatus, _ReadSensorsInOneStatus, _ReadTemperatureStatus
 from .device import Device
 from ..helpers.enums import *
@@ -55,7 +55,7 @@ class Sensor(Device):
         self._call_read_current_status_of_sensor(run_from_init=True)
 
     def _telegram_received_cb(self, telegram):
-        if telegram.operate_code == OperateCode.ReadSensorStatusResponse:
+        if telegram.operate_code == OperateCode.Read12in1SensorStatusResponse:
             success_or_fail = telegram.payload[0]
             self._current_temperature = telegram.payload[1]
             brightness_high = telegram.payload[2]
@@ -77,7 +77,7 @@ class Sensor(Device):
             self._dry_contact_2_status = telegram.payload[9]
             self._call_device_updated()
 
-        elif telegram.operate_code == OperateCode.BroadcastSensorStatusResponse:
+        elif telegram.operate_code == OperateCode.Broadcast12in1SensorStatusResponse:
             self._current_temperature = telegram.payload[0]
             brightness_high = telegram.payload[1]
             brightness_low = telegram.payload[2]
@@ -92,7 +92,7 @@ class Sensor(Device):
             if self._channel_number == telegram.payload[0]:
                 self._temperature = struct.unpack('>8h', telegram.payload[1])
 
-        elif telegram.operate_code == OperateCode.BroadcastSensorStatusAutoResponse:
+        elif telegram.operate_code == OperateCode.Broadcast12in1SensorStatusAutoResponse:
             self._current_temperature = telegram.payload[0]
             brightness_high = telegram.payload[1]
             brightness_low = telegram.payload[2]
@@ -176,19 +176,20 @@ class Sensor(Device):
             rfhs = _ReadFloorHeatingStatus(self._buspro)
             rfhs.subnet_id, rfhs.device_id = self._device_address
             await rfhs.send()
-        elif self._sensor_type in [SensorType.DRY_CONTACT_1, SensorType.DRY_CONTACT_2] and self._device_class not in [DeviceClass.SENSORS_IN_ONE,DeviceClass.TWELVE_IN_ONE]:
-            rdcs = _ReadDryContactStatus(self._buspro)
-            rdcs.subnet_id, rdcs.device_id = self._device_address
-            rdcs.switch_number = self._switch_number
-            await rdcs.send()
         elif self._device_class == DeviceClass.SENSORS_IN_ONE:
             rsios = _ReadSensorsInOneStatus(self._buspro)
             rsios.subnet_id, rsios.device_id = self._device_address
             await rsios.send()
-        else:
-            rss = _ReadSensorStatus(self._buspro)
-            rss.subnet_id, rss.device_id = self._device_address
-            await rss.send()
+        elif self._device_class == DeviceClass.TWELVE_IN_ONE:
+            rsios = _Read12in1SensorStatus(self._buspro)
+            rsios.subnet_id, rsios.device_id = self._device_address
+            await rsios.send()            
+        elif self._sensor_type in [SensorType.DRY_CONTACT_1, SensorType.DRY_CONTACT_2]:
+            rdcs = _ReadDryContactStatus(self._buspro)
+            rdcs.subnet_id, rdcs.device_id = self._device_address
+            rdcs.switch_number = self._switch_number
+            await rdcs.send()
+
 
     @property
     def temperature(self):

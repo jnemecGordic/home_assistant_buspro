@@ -65,8 +65,7 @@ sensor:
         name: Living Room
         type: temperature
         unit_of_measurement: °C
-        device_class: temperature
-        device: dlp
+        device_class: dlp
       - address: 1.74
         name: Front Door
         type: illuminance
@@ -77,13 +76,17 @@ sensor:
   + **name** _(string) (Required)_: The name of the device
   + **type** _(string) (Required)_: Type of sensor to monitor. 
     + Available sensors: 
-     + temperature
+     + temperature     
+     + humidity
      + illuminance
   + **unit_of_measurement** _(string) (Optional)_: text to be displayed as unit of measurement
-  + **device_class** _(string) (Optional)_: HASS device class e.g., "temperature" 
-  (https://www.home-assistant.io/components/sensor/)
-  + **device** _(string) (Optional)_: The type of sensor device:
-    + dlp 
+  + **device_class** _(string) (Optional)_: The type of sensor device
+    + Available classes: 
+      + 12in1
+      + sensors_in_one      
+      + itouch
+      + dlp    
+  
 
 #### Binary sensor platform
 

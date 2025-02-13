@@ -43,8 +43,8 @@ class _Control:
             operate_code = OperateCode.ReadStatusOfChannels
             payload = []
 
-        elif type(control) == _ReadSensorStatus:
-            operate_code = OperateCode.ReadSensorStatus
+        elif type(control) == _Read12in1SensorStatus:
+            operate_code = OperateCode.Read12in1SensorStatus
             payload = []
 
         elif type(control) == _ReadSensorsInOneStatus:
@@ -141,7 +141,7 @@ class _ReadStatusOfSwitch(_Control):
         super().__init__(buspro)
 
 
-class _ReadSensorStatus(_Control):
+class _Read12in1SensorStatus(_Control):
     def __init__(self, buspro):
         super().__init__(buspro)
         # no more properties

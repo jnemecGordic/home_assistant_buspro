@@ -9,15 +9,16 @@ import logging
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.components.sensor import PLATFORM_SCHEMA
+from homeassistant.components.sensor import (
+    PLATFORM_SCHEMA,
+    SensorDeviceClass
+)
 from homeassistant.const import (
     CONF_NAME,
     CONF_DEVICES,
     CONF_ADDRESS,
     CONF_TYPE,
     CONF_UNIT_OF_MEASUREMENT,
-    ILLUMINANCE,
-    TEMPERATURE,
     CONF_DEVICE_CLASS,
     CONF_SCAN_INTERVAL
 )
@@ -26,20 +27,20 @@ from homeassistant.helpers.entity import Entity
 
 from .const import HUMIDITY
 from ..buspro import DATA_BUSPRO
+from .pybuspro.devices.sensor import SensorType, DeviceClass
 
 DEFAULT_CONF_UNIT_OF_MEASUREMENT = ""
 DEFAULT_CONF_DEVICE_CLASS = "None"
 DEFAULT_CONF_OFFSET = 0
-CONF_DEVICE = "device"
 CONF_OFFSET = "offset"
 
 
 _LOGGER = logging.getLogger(__name__)
 
 SENSOR_TYPES = {
-    ILLUMINANCE,
-    TEMPERATURE,
-    HUMIDITY
+    SensorType.ILLUMINANCE.value,
+    SensorType.TEMPERATURE.value,
+    SensorType.HUMIDITY.value
 }
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
@@ -51,7 +52,6 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
                 vol.Required(CONF_TYPE): vol.In(SENSOR_TYPES),
                 vol.Optional(CONF_UNIT_OF_MEASUREMENT, default=DEFAULT_CONF_UNIT_OF_MEASUREMENT): cv.string,
                 vol.Optional(CONF_DEVICE_CLASS, default=DEFAULT_CONF_DEVICE_CLASS): cv.string,
-                vol.Optional(CONF_DEVICE, default=None): cv.string,
                 vol.Optional(CONF_SCAN_INTERVAL, default=0): cv.positive_int,
                 vol.Optional(CONF_OFFSET, default=DEFAULT_CONF_OFFSET): cv.string,
             })
@@ -61,7 +61,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 
 # noinspection PyUnusedLocal
 async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
-    """Set up Buspro switch devices."""
+    """Set up Buspro sensor devices."""
     # noinspection PyUnresolvedReferences
     from .pybuspro.devices import Sensor
 
@@ -71,20 +71,30 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
     for device_config in config[CONF_DEVICES]:
         address = device_config[CONF_ADDRESS]
         name = device_config[CONF_NAME]
-        sensor_type = device_config[CONF_TYPE]
-        device = device_config[CONF_DEVICE]
+        sensor_type_str = device_config[CONF_TYPE]
+        device_class_str = device_config[CONF_DEVICE_CLASS]
         offset = device_config[CONF_OFFSET]
-        
         scan_interval = device_config[CONF_SCAN_INTERVAL]
+
+        # Převod string hodnot na enum
+        try:
+            sensor_type = SensorType(sensor_type_str)
+        except ValueError:
+            _LOGGER.error(f"Invalid sensor type: {sensor_type_str}")
+            continue
+
+        try:
+            device_class = DeviceClass(device_class_str) if device_class_str != "None" else None
+        except ValueError:
+            _LOGGER.error(f"Invalid device class: {device_class_str}")
+            continue
 
         address2 = address.split('.')
         device_address = (int(address2[0]), int(address2[1]))
 
-        _LOGGER.debug("Adding sensor '{}' with address {}, sensor type '{}'".format(
-            name, device_address, sensor_type))
+        _LOGGER.debug(f"Adding sensor '{name}' with address {device_address}, sensor type '{sensor_type}'")
 
-        sensor = Sensor(hdl, device_address, device=device, name=name)
-
+        sensor = Sensor(hdl, device_address, device_class=device_class, sensor_type=sensor_type, name=name)
         devices.append(BusproSensor(hass, sensor, sensor_type, scan_interval, offset))
 
     async_add_entites(devices)
@@ -92,12 +102,12 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 
 # noinspection PyAbstractClass
 class BusproSensor(Entity):
-    """Representation of a Buspro switch."""
+    """Representation of a Buspro sensor."""
 
     def __init__(self, hass, device, sensor_type, scan_interval, offset):
         self._hass = hass
         self._device = device
-        self._sensor_type = sensor_type
+        self._sensor_type = sensor_type  # Nyní je to instance SensorType enum
         self.async_register_callbacks()
         self._offset = offset
         self._temperature = None
@@ -143,25 +153,21 @@ class BusproSensor(Entity):
         """Return True if entity is available."""
         connected = self._hass.data[DATA_BUSPRO].connected
 
-        if self._sensor_type == TEMPERATURE:
+        if self._sensor_type == SensorType.TEMPERATURE:
             return connected and self._current_temperature is not None
-
-        if self._sensor_type == HUMIDITY:
+        if self._sensor_type == SensorType.HUMIDITY:
             return connected and self._humidity is not None
-
-        if self._sensor_type == ILLUMINANCE:
+        if self._sensor_type == SensorType.ILLUMINANCE:
             return connected and self._brightness is not None
 
     @property
     def state(self):
         """Return the state of the sensor."""
-        if self._sensor_type == TEMPERATURE:
+        if self._sensor_type == SensorType.TEMPERATURE:
             return self._current_temperature
-
-        if self._sensor_type == ILLUMINANCE:
+        if self._sensor_type == SensorType.ILLUMINANCE:
             return self._brightness
-
-        if self._sensor_type == HUMIDITY:
+        if self._sensor_type == SensorType.HUMIDITY:
             return self._humidity            
 
     @property
@@ -179,22 +185,22 @@ class BusproSensor(Entity):
     @property
     def device_class(self):
         """Return the class of this sensor."""
-        if self._sensor_type == TEMPERATURE:
+        if self._sensor_type == SensorType.TEMPERATURE:
             return "temperature"
-        if self._sensor_type == ILLUMINANCE:
+        if self._sensor_type == SensorType.ILLUMINANCE:
             return "illuminance"
-        if self._sensor_type == HUMIDITY:
+        if self._sensor_type == SensorType.HUMIDITY:
             return "humidity"
         return None
 
     @property
     def unit_of_measurement(self):
         """Return the unit this state is expressed in."""
-        if self._sensor_type == TEMPERATURE:
+        if self._sensor_type == SensorType.TEMPERATURE:
             return "°C"
-        if self._sensor_type == ILLUMINANCE:
+        if self._sensor_type == SensorType.ILLUMINANCE:
             return "lux"
-        if self._sensor_type == HUMIDITY:
+        if self._sensor_type == SensorType.HUMIDITY:
             return "%"
         return ""
 
@@ -207,7 +213,7 @@ class BusproSensor(Entity):
     @property
     def unique_id(self):
         """Return the unique id."""
-        return f"{self._device.device_identifier}-{self._sensor_type}"
+        return f"{self._device.device_identifier}-{self._sensor_type.value}"
 
     @property
     def scan_interval(self):

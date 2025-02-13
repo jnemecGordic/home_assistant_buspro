@@ -1,7 +1,26 @@
 import asyncio
 import struct
+from enum import Enum
 
-# from ..helpers.generics import Generics
+class SensorType(Enum):
+    NONE = None
+    TEMPERATURE = "temperature"
+    ILLUMINANCE = "illuminance"
+    HUMIDITY = "humidity"
+    MOTION = "motion"
+    DRY_CONTACT_1 = "dry_contact_1"
+    DRY_CONTACT_2 = "dry_contact_2"
+    UNIVERSAL_SWITCH = "universal_switch"
+    SINGLE_CHANNEL = "single_channel"
+
+
+class DeviceClass(Enum):
+    NONE = None
+    TWELVE_IN_ONE = "12in1"
+    DLP = "dlp"
+    ITOUCH = "itouch"
+    SENSORS_IN_ONE = "sensors_in_one"
+
 from .control import _ReadSensorStatus, _ReadStatusOfUniversalSwitch, _ReadStatusOfChannels, _ReadFloorHeatingStatus, \
     _ReadDryContactStatus, _ReadSensorsInOneStatus, _ReadTemperatureStatus
 from .device import Device
@@ -9,16 +28,17 @@ from ..helpers.enums import *
 
 
 class Sensor(Device):
-    def __init__(self, buspro, device_address, universal_switch_number=None, channel_number=None, device=None,
+    def __init__(self, buspro, device_address,device_class=None, sensor_type=None, universal_switch_number=None, channel_number=None, device=None,
                  switch_number=None, name="", delay_read_current_state_seconds=0):
         super().__init__(buspro, device_address, name)
 
         self._buspro = buspro
         self._device_address = device_address
+        self._sensor_type = SensorType(sensor_type)
+        self._device_class = DeviceClass(device_class)
         self._universal_switch_number = universal_switch_number
         self._channel_number = channel_number
         self._name = name
-        self._device = device
         self._switch_number = switch_number
 
         self._current_temperature = None
@@ -75,9 +95,8 @@ class Sensor(Device):
 
         elif telegram.operate_code == OperateCode.BroadcastSensorStatusAutoResponse:
             self._current_temperature = telegram.payload[0]
-            if self._device == "12in1":
+            if self._device_class == DeviceClass.TWELVE_IN_ONE:
                 self._current_temperature = self._current_temperature - 20
-
             
             brightness_high = telegram.payload[1]
             brightness_low = telegram.payload[2]
@@ -132,6 +151,10 @@ class Sensor(Device):
             if self._switch_number == telegram.payload[1]:
                 self._switch_status = telegram.payload[2]
                 self._call_device_updated()
+        
+        if self._current_temperature is not None and self._device_class in [DeviceClass.TWELVE_IN_ONE,DeviceClass.SENSORS_IN_ONE]:
+            self._current_temperature = self._current_temperature - 20
+
 
     async def read_sensor_status(self):
         if self._universal_switch_number is not None:
@@ -139,12 +162,12 @@ class Sensor(Device):
             rsous.subnet_id, rsous.device_id = self._device_address
             rsous.switch_number = self._universal_switch_number
             await rsous.send()
-        elif self._device is not None and self._channel_number is not None and self._device == "temperature":
+        elif self._sensor_type == SensorType.TEMPERATURE and self._channel_number is not None:
             rts = _ReadTemperatureStatus(self._buspro)
             rts.subnet_id, rts.device_id = self._device_address
             rts.channel_number = self._channel_number
             await rts.send()
-        elif self._device is not None and self._device == "itouch":
+        elif self._device_class == DeviceClass.ITOUCH:
             rts = _ReadTemperatureStatus(self._buspro)
             rts.subnet_id, rts.device_id = self._device_address
             rts.channel_number = 1
@@ -153,16 +176,16 @@ class Sensor(Device):
             rsoc = _ReadStatusOfChannels(self._buspro)
             rsoc.subnet_id, rsoc.device_id = self._device_address
             await rsoc.send()
-        elif self._device is not None and self._device == "dlp":
+        elif self._device_class == DeviceClass.DLP:
             rfhs = _ReadFloorHeatingStatus(self._buspro)
             rfhs.subnet_id, rfhs.device_id = self._device_address
             await rfhs.send()
-        elif self._device is not None and self._device == "dry_contact":
+        elif self._sensor_type in [SensorType.DRY_CONTACT_1, SensorType.DRY_CONTACT_2] and self._device_class not in [DeviceClass.SENSORS_IN_ONE,DeviceClass.TWELVE_IN_ONE]:
             rdcs = _ReadDryContactStatus(self._buspro)
             rdcs.subnet_id, rdcs.device_id = self._device_address
             rdcs.switch_number = self._switch_number
             await rdcs.send()
-        elif self._device is not None and self._device == "sensors_in_one":
+        elif self._device_class == DeviceClass.SENSORS_IN_ONE:
             rsios = _ReadSensorsInOneStatus(self._buspro)
             rsios.subnet_id, rsios.device_id = self._device_address
             await rsios.send()
@@ -173,20 +196,11 @@ class Sensor(Device):
 
     @property
     def temperature(self):
-        if self._current_temperature is None:
-            return 0
-        if self._device is not None and self._device == "dlp":
-            return self._current_temperature
-        if self._device is not None and self._device == "12in1":
-            return self._current_temperature
-        if self._device is not None and self._device == "temperature":
-            return self._current_temperature
-        return self._current_temperature - 20
+        return self._current_temperature
+
 
     @property
     def humidity(self):
-        if self._current_humidity is None:
-            return 0
         return self._current_humidity
 
     @property
@@ -237,9 +251,15 @@ class Sensor(Device):
         else:
             return False
 
+
     @property
     def device_identifier(self):
-        return f"{self._device_address}-{self._universal_switch_number}-{self._channel_number}-{self._switch_number}"
+        device_class = self._device_class.value if self._device_class is not None else 'N'
+        sensor_type = self._sensor_type.value if self._sensor_type is not None else 'N'
+        universal_switch_number = self._universal_switch_number if self._universal_switch_number is not None else 'N'
+        channel_number = self._channel_number if self._channel_number is not None else 'N'
+        switch_number = self._switch_number if self._switch_number is not None else 'N'
+        return f"{self._device_address}-{device_class}-{sensor_type}-{universal_switch_number}-{channel_number}-{switch_number}"
 
     def _call_read_current_status_of_sensor(self, run_from_init=False):
 

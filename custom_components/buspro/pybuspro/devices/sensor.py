@@ -9,6 +9,7 @@ class SensorType(Enum):
     HUMIDITY = "humidity"
     MOTION = "motion"
     SONIC = "sonic"
+    DRY_CONTACT = "dry_contact"
     DRY_CONTACT_1 = "dry_contact_1"
     DRY_CONTACT_2 = "dry_contact_2"
     UNIVERSAL_SWITCH = "universal_switch"
@@ -176,7 +177,7 @@ class Sensor(Device):
             rsios = _Read12in1SensorStatus(self._buspro)
             rsios.subnet_id, rsios.device_id = self._device_address
             await rsios.send()            
-        elif self._sensor_type in [SensorType.DRY_CONTACT_1, SensorType.DRY_CONTACT_2]:
+        elif self._sensor_type == SensorType.DRY_CONTACT:
             _LOGGER.debug(f"Reading dry contact status for device {self._device_address}, switch {self._switch_number}")
             rdcs = _ReadDryContactStatus(self._buspro)
             rdcs.subnet_id, rdcs.device_id = self._device_address

@@ -114,6 +114,8 @@ class BusproBinarySensor(BinarySensorEntity):
             return self._device.universal_switch_is_on
         elif self._sensor_type == SensorType.SINGLE_CHANNEL:
             return self._device.single_channel_is_on
+        if self._sensor_type == SensorType.DRY_CONTACT:
+            return self._device.switch_status        
         return self._device.switch_status
 
     @property

@@ -75,15 +75,23 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 class BusproLight(LightEntity):
     """Representation of a Buspro light."""
 
-    def __init__(self, hass, device, running_time, dimmable,scan_interval):
+    def __init__(self, hass, device, running_time, dimmable, scan_interval):
         self._hass = hass
         self._device = device
         self._running_time = running_time
         self._dimmable = dimmable
-        self._attr_color_mode = ColorMode.BRIGHTNESS
-        self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
         self._scan_interval = scan_interval
         self.async_register_callbacks()
+
+    @property
+    def supported_color_modes(self) -> set:
+        """Return supported color modes."""
+        return {ColorMode.BRIGHTNESS} if self._dimmable else {ColorMode.ONOFF}
+
+    @property
+    def color_mode(self) -> str:
+        """Return the color mode of the light."""
+        return ColorMode.BRIGHTNESS if self._dimmable else ColorMode.ONOFF
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
@@ -152,3 +160,4 @@ class BusproLight(LightEntity):
     def unique_id(self):
         """Return the unique id."""
         return self._device.device_identifier
+

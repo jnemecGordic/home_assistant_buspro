@@ -84,8 +84,8 @@ class Sensor(Device):
             self._call_device_updated()
 
         elif telegram.operate_code in [OperateCode.ReadSensorsInOneStatusResponse,OperateCode.BroadcastSensorsInOneStatusResponse]:
-            self._current_temperature = telegram.payload[1]
-            self._brightness = (telegram.payload[2] * 256) + telegram.payload[3] - 20
+            self._current_temperature = telegram.payload[1] - 20
+            self._brightness = (telegram.payload[2] * 256) + telegram.payload[3]
             self._current_humidity = telegram.payload[4]
             self._motion_sensor = telegram.payload[7]
             self._dry_contact_1_status = telegram.payload[8]

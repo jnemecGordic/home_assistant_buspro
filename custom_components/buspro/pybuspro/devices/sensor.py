@@ -147,7 +147,7 @@ class Sensor(Device):
                 _LOGGER.debug(f"Single channel control response received for channel {self._channel_number} - status:{self._channel_status}")            
                 self._call_device_updated()
 
-        elif telegram.operate_code == OperateCode.ReadDryContactStatusResponse:
+        elif telegram.operate_code in [OperateCode.ReadDryContactStatusResponse, OperateCode.ReadDryContactBroadcastStatusResponse]:
             if self._switch_number == telegram.payload[1]:
                 self._switch_status = telegram.payload[2]
                 _LOGGER.debug(f"Dry contact status received for switch {self._switch_number} - status:{self._switch_status}")            

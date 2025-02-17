@@ -92,9 +92,13 @@ class OperateCode(Enum):
 
     ReadDryContactStatus = b'\x15\xCE'
     ReadDryContactStatusResponse = b'\x15\xCF'
+    ReadDryContactBroadcastStatusResponse = b'\x15\xD1'
 
     ReadTemperatureStatus = b'\xE3\xE7'
     ReadTemperatureStatusResponse = b'\xE3\xE8'
+
+    PanelControl = b'\xE3\xD8'
+    PanelControlResponse = b'\xE3\xD9'    
 
 
     """

@@ -5,8 +5,15 @@ This component provides binary sensor support for Buspro.
 import logging
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.components.binary_sensor import PLATFORM_SCHEMA, BinarySensorEntity
-from homeassistant.const import CONF_NAME, CONF_DEVICES, CONF_ADDRESS, CONF_TYPE, CONF_DEVICE, CONF_SCAN_INTERVAL
+from homeassistant.components.binary_sensor import (
+    PLATFORM_SCHEMA, 
+    BinarySensorEntity,
+    DEVICE_CLASSES_SCHEMA
+)
+from homeassistant.const import (
+    CONF_NAME, CONF_DEVICES, CONF_ADDRESS, CONF_TYPE, 
+    CONF_DEVICE, CONF_SCAN_INTERVAL, CONF_DEVICE_CLASS
+)
 from homeassistant.core import callback
 
 from custom_components.buspro.pybuspro.devices.sensor import SensorType
@@ -26,6 +33,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
                 vol.Required(CONF_TYPE): cv.string,  # Expecting string from config
                 vol.Optional(CONF_DEVICE, default=DEFAULT_CONF_DEVICE): cv.string,
                 vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_CONF_SCAN_INTERVAL): cv.positive_int,
+                vol.Optional(CONF_DEVICE_CLASS): DEVICE_CLASSES_SCHEMA,
             })
         ])
 })
@@ -34,7 +42,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 # noinspection PyUnusedLocal
 async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
     """Set up Buspro binary sensor devices."""
-    from .pybuspro.devices import Sensor, SensorType, DeviceClass  # Import enums
+    from .pybuspro.devices import Sensor, SensorType, DeviceFamily  # Import enums
 
     hdl = hass.data[DATA_BUSPRO].hdl
     devices = []
@@ -43,7 +51,8 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         address = device_config[CONF_ADDRESS]
         name = device_config[CONF_NAME]
         sensor_type_str = device_config[CONF_TYPE]  # Get sensor type as string
-        device_class_str = device_config[CONF_DEVICE]
+        device_family_str = device_config[CONF_DEVICE]
+        device_class = device_config.get(CONF_DEVICE_CLASS)
 
         # Convert string representations to enums
         try:
@@ -53,9 +62,9 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
             continue
 
         try:
-            device_class = DeviceClass(device_class_str) if device_class_str != "None" else None
+            device_family = DeviceFamily(device_family_str) if device_family_str != "None" else None
         except ValueError:
-            _LOGGER.error(f"Invalid device class: {device_class_str}")
+            _LOGGER.error(f"Invalid device class: {device_family_str}")
             continue
 
         scan_interval = device_config[CONF_SCAN_INTERVAL]
@@ -68,17 +77,17 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         
         if sensor_type == SensorType.DRY_CONTACT:
             switch_number = int(address2[2]) if len(address2) > 2 else 1
-            sensor = Sensor(hdl, device_address, device_class=device_class, sensor_type=sensor_type.value, name=name, switch_number=switch_number)
+            sensor = Sensor(hdl, device_address, device_family=device_family, sensor_type=sensor_type.value, name=name, switch_number=switch_number)
         elif sensor_type == SensorType.SINGLE_CHANNEL:
             channel_number = int(address2[2])
-            sensor = Sensor(hdl, device_address, device_class=device_class, sensor_type=sensor_type.value, name=name, channel_number=channel_number)
+            sensor = Sensor(hdl, device_address, device_family=device_family, sensor_type=sensor_type.value, name=name, channel_number=channel_number)
         elif sensor_type == SensorType.UNIVERSAL_SWITCH:
             universal_switch_number = int(address2[2])
-            sensor = Sensor(hdl, device_address, device_class=device_class, sensor_type=sensor_type.value, name=name, universal_switch_number=universal_switch_number)
+            sensor = Sensor(hdl, device_address, device_family=device_family, sensor_type=sensor_type.value, name=name, universal_switch_number=universal_switch_number)
         else: 
-            sensor = Sensor(hdl, device_address, device_class=device_class, sensor_type=sensor_type.value, name=name)
+            sensor = Sensor(hdl, device_address, device_family=device_family, sensor_type=sensor_type.value, name=name)
 
-        devices.append(BusproBinarySensor(hass, sensor, sensor_type, scan_interval))
+        devices.append(BusproBinarySensor(hass, sensor, sensor_type, scan_interval, device_class))
 
     async_add_entites(devices)
 
@@ -87,12 +96,13 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 class BusproBinarySensor(BinarySensorEntity):
     """Representation of a Buspro binary sensor."""
 
-    def __init__(self, hass, device, sensor_type, scan_interval):
+    def __init__(self, hass, device, sensor_type, scan_interval, device_class=None):
         """Initialize the Buspro binary sensor."""
         self._hass = hass
         self._device = device
         self._sensor_type = sensor_type
         self._scan_interval = scan_interval
+        self._custom_device_class = device_class
         self._is_on = False  # Initial state
         self.async_register_callbacks()
 
@@ -143,11 +153,6 @@ class BusproBinarySensor(BinarySensorEntity):
         return self._device.name
 
     @property
-    def device_class(self):
-        """Return the class of this device, from component DEVICE_CLASSES."""
-        return None  # You can set a device class if appropriate
-
-    @property
     def unique_id(self):
         """Return the unique id."""
         return f"{self._device.device_identifier}-{self._sensor_type.value}"
@@ -156,3 +161,14 @@ class BusproBinarySensor(BinarySensorEntity):
     def scan_interval(self):
         """Return the scan interval of the sensor."""
         return self._scan_interval
+
+    @property
+    def device_class(self):
+        """Return the class of this device."""
+        if self._custom_device_class is not None:
+            return self._custom_device_class            
+        if self._sensor_type == SensorType.MOTION:
+            return "motion"
+        elif self._sensor_type in [SensorType.DRY_CONTACT, SensorType.DRY_CONTACT_1, SensorType.DRY_CONTACT_2]:
+            return "door"
+        return None

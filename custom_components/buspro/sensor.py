@@ -11,7 +11,8 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import (
     PLATFORM_SCHEMA,
-    SensorDeviceClass
+    SensorEntity,
+    SensorDeviceClass,
 )
 from homeassistant.const import (
     CONF_NAME,
@@ -20,19 +21,20 @@ from homeassistant.const import (
     CONF_TYPE,
     CONF_UNIT_OF_MEASUREMENT,
     CONF_DEVICE,
-    CONF_SCAN_INTERVAL
+    CONF_SCAN_INTERVAL,
+    CONF_DEVICE_CLASS,
 )
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 
 from ..buspro import DATA_BUSPRO
-from .pybuspro.devices.sensor import SensorType, DeviceClass
+from .pybuspro.devices.sensor import SensorType, DeviceFamily
 
 DEFAULT_CONF_UNIT_OF_MEASUREMENT = ""
 DEFAULT_CONF_DEVICE = "None"
 DEFAULT_CONF_OFFSET = 0
 CONF_OFFSET = "offset"
-
+DEFAULT_CONF_SCAN_INTERVAL = 0
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,8 +53,9 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
                 vol.Required(CONF_TYPE): vol.In(SENSOR_TYPES),
                 vol.Optional(CONF_UNIT_OF_MEASUREMENT, default=DEFAULT_CONF_UNIT_OF_MEASUREMENT): cv.string,
                 vol.Optional(CONF_DEVICE, default=DEFAULT_CONF_DEVICE): cv.string,
-                vol.Optional(CONF_SCAN_INTERVAL, default=0): cv.positive_int,
-                vol.Optional(CONF_OFFSET, default=DEFAULT_CONF_OFFSET): cv.string,
+                vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_CONF_SCAN_INTERVAL): cv.positive_int,
+                vol.Optional(CONF_OFFSET): vol.Coerce(float),
+                vol.Optional(CONF_DEVICE_CLASS): cv.sensor_device_class,
             })
         ])
 })
@@ -71,9 +74,10 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         address = device_config[CONF_ADDRESS]
         name = device_config[CONF_NAME]
         sensor_type_str = device_config[CONF_TYPE]
-        device_class_str = device_config[CONF_DEVICE]
+        device_family_str = device_config[CONF_DEVICE]
         offset = device_config[CONF_OFFSET]
         scan_interval = device_config[CONF_SCAN_INTERVAL]
+        device_class = device_config.get(CONF_DEVICE_CLASS)
 
         # Převod string hodnot na enum
         try:
@@ -83,9 +87,9 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
             continue
 
         try:
-            device_class = DeviceClass(device_class_str) if device_class_str != "None" else None
+            device_family = DeviceFamily(device_family_str) if device_family_str != "None" else None
         except ValueError:
-            _LOGGER.error(f"Invalid device class: {device_class_str}")
+            _LOGGER.error(f"Invalid device class: {device_family_str}")
             continue
 
         address2 = address.split('.')
@@ -93,8 +97,8 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 
         _LOGGER.debug(f"Adding sensor '{name}' with address {device_address}, sensor type '{sensor_type}'")
 
-        sensor = Sensor(hdl, device_address, device_class=device_class, sensor_type=sensor_type, name=name)
-        devices.append(BusproSensor(hass, sensor, sensor_type, scan_interval, offset))
+        sensor = Sensor(hdl, device_address, device_family=device_family, sensor_type=sensor_type, name=name)
+        devices.append(BusproSensor(hass, sensor, sensor_type, scan_interval, offset, device_class))
 
     async_add_entites(devices)
 
@@ -103,7 +107,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 class BusproSensor(Entity):
     """Representation of a Buspro sensor."""
 
-    def __init__(self, hass, device, sensor_type, scan_interval, offset):
+    def __init__(self, hass, device, sensor_type, scan_interval, offset, device_class=None):
         self._hass = hass
         self._device = device
         self._sensor_type = sensor_type  # Nyní je to instance SensorType enum
@@ -113,6 +117,7 @@ class BusproSensor(Entity):
         self._brightness = None
         self._humidity = None
         self._scan_interval = scan_interval
+        self._custom_device_class = device_class
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
@@ -184,6 +189,8 @@ class BusproSensor(Entity):
     @property
     def device_class(self):
         """Return the class of this sensor."""
+        if self._custom_device_class is not None:
+            return self._custom_device_class            
         if self._sensor_type == SensorType.TEMPERATURE:
             return "temperature"
         if self._sensor_type == SensorType.ILLUMINANCE:

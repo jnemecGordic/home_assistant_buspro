@@ -57,18 +57,6 @@ class TelegramHelper:
             print("error building telegram: {}".format(traceback.format_exc()))
             return None
 
-    @staticmethod
-    def replace_none_values(telegram: Telegram):
-        if telegram is None:
-            return None
-        if telegram.payload is None:
-            telegram.payload = []
-        if telegram.source_address is None:
-            telegram.source_address = [200, 200]
-        if telegram.source_device_type is None:
-            telegram.source_device_type = DeviceType.PyBusPro
-        return telegram
-
     # noinspection SpellCheckingInspection
     def build_send_buffer(self, telegram: Telegram):
         send_buf = bytearray([192, 168, 1, 15])

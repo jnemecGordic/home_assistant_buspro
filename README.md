@@ -80,10 +80,10 @@ sensor:
       + illuminance
   + **unit_of_measurement** _(string) (Optional)_: text to be displayed as unit of measurement
   + **device** _(string) (Optional)_: The type of HDL sensor device
-    + Available classes: 
+    + Available device families: 
       + 12in1
-      + sensors_in_one (devices like 7 in 1)
-      + itouch
+      + sensors_in_one (devices like 8 in 1 and 7 in 1)
+      + panel
       + dlp    
   
 
@@ -117,7 +117,7 @@ binary_sensor:
       + universal_switch
       + single_channel
   + **device** _(string) (Optional)_: The type of HDL sensor device
-    + Available classes: 
+    + Available device families: 
       + 12in1
       + sensors_in_one (devices like 7 in 1)
 

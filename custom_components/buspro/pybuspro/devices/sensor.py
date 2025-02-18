@@ -16,10 +16,10 @@ class SensorType(Enum):
     SINGLE_CHANNEL = "single_channel"
 
 
-class DeviceClass(Enum):
+class DeviceFamily(Enum):
     TWELVE_IN_ONE = "12in1"
     DLP = "dlp"
-    ITOUCH = "itouch"
+    PANEL = "panel"
     SENSORS_IN_ONE = "sensors_in_one"
 
 from .control import _Read12in1SensorStatus, _ReadStatusOfUniversalSwitch, _ReadStatusOfChannels, _ReadFloorHeatingStatus, \
@@ -30,14 +30,14 @@ from ..helpers.enums import *
 _LOGGER = logging.getLogger(__name__)
 
 class Sensor(Device):
-    def __init__(self, buspro, device_address, device_class=None, sensor_type=None, universal_switch_number=None, channel_number=None, device=None,
+    def __init__(self, buspro, device_address, device_family=None, sensor_type=None, universal_switch_number=None, channel_number=None, device=None,
                  switch_number=None, name="", delay_read_current_state_seconds=0):
         super().__init__(buspro, device_address, name)
 
         self._buspro = buspro
         self._device_address = device_address
         self._sensor_type = SensorType(sensor_type) if sensor_type is not None else None
-        self._device_class = DeviceClass(device_class) if device_class is not None else None
+        self._device_family = DeviceFamily(device_family) if device_family is not None else None
         self._universal_switch_number = universal_switch_number
         self._channel_number = channel_number
         self._name = name
@@ -156,28 +156,28 @@ class Sensor(Device):
 
 
     async def read_sensor_status(self):
-        if self._device_class == DeviceClass.ITOUCH:
+        if self._device_family is not None and self._device_family == DeviceFamily.PANEL and self._sensor_type is not None and self._sensor_type == SensorType.TEMPERATURE:
             _LOGGER.debug(f"Reading iTouch panel temperature status for device {self._device_address}")
             rts = _ReadTemperatureStatus(self._buspro)
             rts.subnet_id, rts.device_id = self._device_address
             rts.channel_number = 1
             await rts.send()
-        elif self._device_class == DeviceClass.DLP:
+        elif self._device_family is not None and self._device_family == DeviceFamily.DLP:
             _LOGGER.debug(f"Reading DLP floor heating status for device {self._device_address}")
             rfhs = _ReadFloorHeatingStatus(self._buspro)
             rfhs.subnet_id, rfhs.device_id = self._device_address
             await rfhs.send()
-        elif self._device_class == DeviceClass.SENSORS_IN_ONE:
+        elif self._device_family is not None and self._device_family == DeviceFamily.SENSORS_IN_ONE:
             _LOGGER.debug(f"Reading sensors-in-one status for device {self._device_address}")
             rsios = _ReadSensorsInOneStatus(self._buspro)
             rsios.subnet_id, rsios.device_id = self._device_address
             await rsios.send()
-        elif self._device_class == DeviceClass.TWELVE_IN_ONE:
+        elif self._device_family is not None and self._device_family == DeviceFamily.TWELVE_IN_ONE:
             _LOGGER.debug(f"Reading 12-in-1 sensor status for device {self._device_address}")
             rsios = _Read12in1SensorStatus(self._buspro)
             rsios.subnet_id, rsios.device_id = self._device_address
             await rsios.send()            
-        elif self._sensor_type == SensorType.DRY_CONTACT:
+        elif self._sensor_type is not None and self._sensor_type == SensorType.DRY_CONTACT:
             _LOGGER.debug(f"Reading dry contact status for device {self._device_address}, switch {self._switch_number}")
             rdcs = _ReadDryContactStatus(self._buspro)
             rdcs.subnet_id, rdcs.device_id = self._device_address
@@ -189,7 +189,7 @@ class Sensor(Device):
             rsous.subnet_id, rsous.device_id = self._device_address
             rsous.switch_number = self._universal_switch_number
             await rsous.send()
-        elif self._sensor_type == SensorType.TEMPERATURE and self._channel_number is not None:
+        elif self._sensor_type is not None and self._sensor_type == SensorType.TEMPERATURE and self._channel_number is not None:
             _LOGGER.debug(f"Reading temperature status for device {self._device_address}, channel {self._channel_number}")
             rts = _ReadTemperatureStatus(self._buspro)
             rts.subnet_id, rts.device_id = self._device_address
@@ -263,12 +263,12 @@ class Sensor(Device):
 
     @property
     def device_identifier(self):
-        device_class = self._device_class.value if self._device_class is not None else 'N'
+        device_family = self._device_family.value if self._device_family is not None else 'N'
         sensor_type = self._sensor_type.value if self._sensor_type is not None else 'N'
         universal_switch_number = self._universal_switch_number if self._universal_switch_number is not None else 'N'
         channel_number = self._channel_number if self._channel_number is not None else 'N'
         switch_number = self._switch_number if self._switch_number is not None else 'N'
-        return f"{self._device_address}-{device_class}-{sensor_type}-{universal_switch_number}-{channel_number}-{switch_number}"
+        return f"{self._device_address}-{device_family}-{sensor_type}-{universal_switch_number}-{channel_number}-{switch_number}"
 
     def _call_read_current_status_of_sensor(self, run_from_init=False):
 

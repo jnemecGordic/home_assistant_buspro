@@ -7,5 +7,17 @@ from .sensor import Sensor
 from .switch import Switch
 from .button import Button
 from .universal_switch import UniversalSwitch
-from .sensor import SensorType, DeviceClass, Sensor
-__all__ = ['SensorType', 'DeviceClass', 'Sensor']
+from .sensor import SensorType, DeviceFamily, Sensor
+
+__all__ = [
+    'Climate',
+    'Device',
+    'Light',
+    'Scene',
+    'Sensor',
+    'Switch',
+    'Button',
+    'UniversalSwitch',
+    'SensorType',
+    'DeviceFamily'
+]

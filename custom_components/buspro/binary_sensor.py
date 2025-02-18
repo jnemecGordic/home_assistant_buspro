@@ -65,7 +65,18 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 
         _LOGGER.debug(f"Adding binary sensor '{name}' with address {device_address}, sensor type '{sensor_type}'")
 
-        sensor = Sensor(hdl, device_address, device_class=device_class, sensor_type=sensor_type.value, name=name)  # Pass enum value
+        
+        if sensor_type == SensorType.DRY_CONTACT:
+            switch_number = int(address2[2]) if len(address2) > 2 else 1
+            sensor = Sensor(hdl, device_address, device_class=device_class, sensor_type=sensor_type.value, name=name, switch_number=switch_number)
+        elif sensor_type == SensorType.SINGLE_CHANNEL:
+            channel_number = int(address2[2])
+            sensor = Sensor(hdl, device_address, device_class=device_class, sensor_type=sensor_type.value, name=name, channel_number=channel_number)
+        elif sensor_type == SensorType.UNIVERSAL_SWITCH:
+            universal_switch_number = int(address2[2])
+            sensor = Sensor(hdl, device_address, device_class=device_class, sensor_type=sensor_type.value, name=name, universal_switch_number=universal_switch_number)
+        else: 
+            sensor = Sensor(hdl, device_address, device_class=device_class, sensor_type=sensor_type.value, name=name)
 
         devices.append(BusproBinarySensor(hass, sensor, sensor_type, scan_interval))
 

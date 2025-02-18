@@ -175,7 +175,7 @@ button:
     + **state** - `on` or `off` (determines the value sent when pressed)
     + **name** _(string) (Required)_: The name of the button
 
-When pressed, the button sends panel control command (0xE3D8) with the configured state value to the specified device address.
+When pressed, the button sends panel control command with the configured state value to the specified device address.
 
 ---
 ## Services

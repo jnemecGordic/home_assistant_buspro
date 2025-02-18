@@ -13,6 +13,7 @@ from homeassistant.components.sensor import (
     PLATFORM_SCHEMA,
     SensorEntity,
     SensorDeviceClass,
+    DEVICE_CLASSES_SCHEMA,
 )
 from homeassistant.const import (
     CONF_NAME,
@@ -53,9 +54,9 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
                 vol.Required(CONF_TYPE): vol.In(SENSOR_TYPES),
                 vol.Optional(CONF_UNIT_OF_MEASUREMENT, default=DEFAULT_CONF_UNIT_OF_MEASUREMENT): cv.string,
                 vol.Optional(CONF_DEVICE, default=DEFAULT_CONF_DEVICE): cv.string,
-                vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_CONF_SCAN_INTERVAL): cv.positive_int,
-                vol.Optional(CONF_OFFSET): vol.Coerce(float),
-                vol.Optional(CONF_DEVICE_CLASS): cv.sensor_device_class,
+                vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_CONF_SCAN_INTERVAL): cv.positive_int,                
+                vol.Optional(CONF_OFFSET, default=DEFAULT_CONF_OFFSET): vol.Coerce(float),
+                vol.Optional(CONF_DEVICE_CLASS): DEVICE_CLASSES_SCHEMA,
             })
         ])
 })

@@ -96,6 +96,7 @@ class OperateCode(Enum):
 
     ReadTemperatureStatus = b'\xE3\xE7'
     ReadTemperatureStatusResponse = b'\xE3\xE8'
+    
 
     PanelControl = b'\xE3\xD8'
     PanelControlResponse = b'\xE3\xD9'    

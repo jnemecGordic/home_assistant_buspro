@@ -105,7 +105,7 @@ class Sensor(Device):
             _LOGGER.debug(f"Floor heating temperature received - temp:{self._current_temperature}")        
             self._call_device_updated()
 
-        elif telegram.operate_code == OperateCode.BroadcastTemperatureResponse:
+        elif telegram.operate_code == OperateCode.BroadcastTemperatureResponse: # not sure if this is correct
             self._current_temperature = telegram.payload[1]
             _LOGGER.debug(f"Temperature broadcast received - temp:{self._current_temperature}")        
             self._call_device_updated()

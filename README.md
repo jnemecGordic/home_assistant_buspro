@@ -151,6 +151,31 @@ climate:
 |      home      |   Day    |
 |     sleep      |  Night   |
 
+#### Button platform
+
+To use HDL Buspro buttons in your installation, add the following to your configuration.yaml file:
+
+```yaml
+button:
+  - platform: buspro
+    devices:
+      "200.2.1.on":     # subnet.device.button.state
+        name: "Button 1 ON"
+      "200.2.1.off":
+        name: "Button 1 OFF"
+      "200.2.2.on":
+        name: "Button 2 ON"
+```
+
++ **devices** _(Required)_: A list of devices to set up
+  + **X.X.X.state** _(Required)_: The address of the button in format `<subnet ID>.<device ID>.<button number>.<state>`
+    + **subnet ID** - subnet number (1-255)
+    + **device ID** - device number (1-255)
+    + **button number** - button number (1-255)
+    + **state** - `on` or `off` (determines the value sent when pressed)
+    + **name** _(string) (Required)_: The name of the button
+
+When pressed, the button sends panel control command (0xE3D8) with the configured state value to the specified device address.
 
 ---
 ## Services

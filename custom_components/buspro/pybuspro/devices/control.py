@@ -57,7 +57,7 @@ class _Control:
 
         elif type(control) == _ReadTemperatureStatus:
             operate_code = OperateCode.ReadTemperatureStatus
-            payload = [1, control.channel_number]
+            payload = [control.channel_number]
 
         elif type(control) == _ReadFloorHeatingStatus:
             operate_code = OperateCode.ReadFloorHeatingStatus

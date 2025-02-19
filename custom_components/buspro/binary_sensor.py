@@ -17,6 +17,8 @@ from homeassistant.const import (
 from homeassistant.core import callback
 
 from custom_components.buspro.pybuspro.devices.sensor import SensorType
+from .pybuspro.helpers.enums import DeviceFamily, validate_device_family
+from .pybuspro.devices.sensor import Sensor, SensorType
 from ..buspro import DATA_BUSPRO
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,8 +32,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
             vol.All({
                 vol.Required(CONF_ADDRESS): cv.string,
                 vol.Required(CONF_NAME): cv.string,
-                vol.Required(CONF_TYPE): cv.string,  # Expecting string from config
-                vol.Optional(CONF_DEVICE, default=DEFAULT_CONF_DEVICE): cv.string,
+                vol.Required(CONF_TYPE): cv.string,  # Expecting string from config                
+                vol.Optional(CONF_DEVICE, default=DEFAULT_CONF_DEVICE): vol.All(cv.string, validate_device_family),
                 vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_CONF_SCAN_INTERVAL): cv.positive_int,
                 vol.Optional(CONF_DEVICE_CLASS): DEVICE_CLASSES_SCHEMA,
             })
@@ -42,7 +44,6 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 # noinspection PyUnusedLocal
 async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
     """Set up Buspro binary sensor devices."""
-    from .pybuspro.devices import Sensor, SensorType, DeviceFamily  # Import enums
 
     hdl = hass.data[DATA_BUSPRO].hdl
     devices = []
@@ -169,6 +170,4 @@ class BusproBinarySensor(BinarySensorEntity):
             return self._custom_device_class            
         if self._sensor_type == SensorType.MOTION:
             return "motion"
-        elif self._sensor_type in [SensorType.DRY_CONTACT, SensorType.DRY_CONTACT_1, SensorType.DRY_CONTACT_2]:
-            return "door"
         return None

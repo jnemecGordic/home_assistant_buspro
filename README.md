@@ -22,10 +22,10 @@ light:
   - platform: buspro
     running_time: 3
     devices:
-      1.89.1:
+      "1.89.1":
         name: Living Room Light
         running_time: 5
-      1.89.2:
+      "1.89.2":
         name: Front Door Light
         dimmable: False
 ```
@@ -44,9 +44,9 @@ To use your Buspro switch in your installation, add the following to your config
 switch:
   - platform: buspro
     devices:
-      1.89.1:
+      "1.89.1":
         name: Living Room Switch
-      1.89.2:
+      "1.89.2":
         name: Front Door Switch
 ```
 + **devices** _(Required)_: A list of devices to set up
@@ -61,11 +61,11 @@ To use your Buspro sensor in your installation, add the following to your config
 sensor:
   - platform: buspro
     devices:
-      - address: 1.74
+      - address: "1.74"
         name: Living Room
         type: temperature
         device: dlp
-      - address: 1.74
+      - address: "1.74"
         name: Front Door
         type: illuminance
         unit_of_measurement: lux
@@ -95,13 +95,13 @@ To use your Buspro binary sensor in your installation, add the following to your
 binary_sensor:
   - platform: buspro
     devices:
-      - address: 1.74
+      - address: "1.74"
         name: Living Room
         type: motion        
-      - address: 1.74.100
+      - address: "1.74.100"
         name: Front Door
         type: universal_switch
-      - address: 1.75.3
+      - address: "1.75.3"
         name: Kitchen switch
         type: single_channel
 ```
@@ -129,14 +129,14 @@ To use your Buspro panel climate control in your installation, add the following
 climate:
   - platform: buspro
     devices:
-      - address: 1.74
+      - address: "1.74"
         name: Living Room
         preset_modes: 
           - none
           - away
           - home
           - sleep
-      - address: 1.74
+      - address: "1.74"
         name: Front Door
 ```
 + **devices** _(Required)_: A list of devices to set up

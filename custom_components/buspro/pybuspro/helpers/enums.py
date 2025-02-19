@@ -1,5 +1,5 @@
 from enum import Enum
-
+import voluptuous as vol
 
 class SuccessOrFailure(Enum):
     Success = b'\xF8'
@@ -154,6 +154,23 @@ class OperateCode(Enum):
     RESPONSE_QUERY_12in1_FROM_SETUP_TOOL_8 = b'\x16\x6F'
     QUERY_12in1_FROM_SETUP_TOOL_9 = b'\x16\xA9'
     RESPONSE_QUERY_12in1_FROM_SETUP_TOOL_9 = b'\x16\xAA'
+
+
+class DeviceFamily(str, Enum):
+    TWELVE_IN_ONE = "12in1"
+    DLP = "dlp"
+    PANEL = "panel"
+    SENSORS_IN_ONE = "sensors_in_one"
+
+def validate_device_family(value):
+    """Validate device family value."""
+    if value == "None":
+        return value
+    valid_values = [member.value for member in DeviceFamily]
+    if value not in valid_values:
+        raise vol.Invalid(f"Invalid device family: {value}. Valid values are: {', '.join(valid_values)}")
+    return value
+
 
     '''
     public enum OperationCode
@@ -438,3 +455,4 @@ class OperateCode(Enum):
     //		SingleChannelControl = 0x0031
     //	}
     '''
+

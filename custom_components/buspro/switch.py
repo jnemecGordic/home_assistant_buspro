@@ -10,16 +10,20 @@ import logging
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.switch import SwitchEntity, PLATFORM_SCHEMA
-from homeassistant.const import (CONF_NAME, CONF_DEVICES, CONF_SCAN_INTERVAL)
+from homeassistant.const import (CONF_NAME, CONF_DEVICES, CONF_SCAN_INTERVAL, CONF_DEVICE)
 from homeassistant.core import callback
 
 from ..buspro import DATA_BUSPRO
+from .pybuspro.helpers.enums import DeviceFamily, validate_device_family
+
+DEFAULT_CONF_DEVICE = "None"
 
 _LOGGER = logging.getLogger(__name__)
 
 DEVICE_SCHEMA = vol.Schema({
     vol.Required(CONF_NAME): cv.string,
     vol.Optional(CONF_SCAN_INTERVAL, default=0): cv.positive_int,
+    vol.Optional(CONF_DEVICE, default=DEFAULT_CONF_DEVICE): vol.All(cv.string, validate_device_family),
 })
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
@@ -38,6 +42,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     for address, device_config in config[CONF_DEVICES].items():
         name = device_config[CONF_NAME]
         scan_interval = device_config[CONF_SCAN_INTERVAL]
+        device_family_str = device_config.get(CONF_DEVICE)
         address2 = address.split('.')
         device_address = (int(address2[0]), int(address2[1]))
         channel_number = int(address2[2])

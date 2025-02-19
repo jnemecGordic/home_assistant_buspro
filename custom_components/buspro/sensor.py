@@ -6,7 +6,7 @@ https://home-assistant.io/components/...
 """
 
 import logging
-
+from .pybuspro.helpers.enums import DeviceFamily, validate_device_family
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import (
@@ -45,6 +45,7 @@ SENSOR_TYPES = {
     SensorType.HUMIDITY.value
 }
 
+
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_DEVICES):
         vol.All(cv.ensure_list, [
@@ -53,9 +54,9 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
                 vol.Required(CONF_NAME): cv.string,
                 vol.Required(CONF_TYPE): vol.In(SENSOR_TYPES),
                 vol.Optional(CONF_UNIT_OF_MEASUREMENT, default=DEFAULT_CONF_UNIT_OF_MEASUREMENT): cv.string,
-                vol.Optional(CONF_DEVICE, default=DEFAULT_CONF_DEVICE): cv.string,
+                vol.Optional(CONF_DEVICE, default=DEFAULT_CONF_DEVICE): vol.All(cv.string, validate_device_family),
                 vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_CONF_SCAN_INTERVAL): cv.positive_int,                
-                vol.Optional(CONF_OFFSET, default=DEFAULT_CONF_OFFSET): vol.Coerce(float),
+                vol.Optional(CONF_OFFSET, default=DEFAULT_CONF_OFFSET): cv.integer,
                 vol.Optional(CONF_DEVICE_CLASS): DEVICE_CLASSES_SCHEMA,
             })
         ])
@@ -80,7 +81,6 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         scan_interval = device_config[CONF_SCAN_INTERVAL]
         device_class = device_config.get(CONF_DEVICE_CLASS)
 
-        # Převod string hodnot na enum
         try:
             sensor_type = SensorType(sensor_type_str)
         except ValueError:
@@ -93,13 +93,20 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
             _LOGGER.error(f"Invalid device class: {device_family_str}")
             continue
 
-        address2 = address.split('.')
-        device_address = (int(address2[0]), int(address2[1]))
+        address2 = address.split('.')        
+        device_address = (int(address2[0]), int(address2[1]))        
+        channel_number = None
+
+        if SensorType.TEMPERATURE == sensor_type:
+            if DeviceFamily.PANEL == device_family:
+                channel_number = 1
+            if len(address2) > 2:
+                channel_number = int(address2[2])
 
         _LOGGER.debug(f"Adding sensor '{name}' with address {device_address}, sensor type '{sensor_type}'")
-
-        sensor = Sensor(hdl, device_address, device_family=device_family, sensor_type=sensor_type, name=name)
+        sensor = Sensor(hdl, device_address, device_family=device_family, sensor_type=sensor_type, name=name, channel_number=channel_number)
         devices.append(BusproSensor(hass, sensor, sensor_type, scan_interval, offset, device_class))
+
 
     async_add_entites(devices)
 
@@ -111,14 +118,14 @@ class BusproSensor(Entity):
     def __init__(self, hass, device, sensor_type, scan_interval, offset, device_class=None):
         self._hass = hass
         self._device = device
-        self._sensor_type = sensor_type  # Nyní je to instance SensorType enum
-        self.async_register_callbacks()
+        self._sensor_type = sensor_type        
         self._offset = offset
         self._temperature = None
         self._brightness = None
         self._humidity = None
         self._scan_interval = scan_interval
         self._custom_device_class = device_class
+        self.async_register_callbacks()
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
@@ -179,12 +186,9 @@ class BusproSensor(Entity):
     def _current_temperature(self):
         if self._temperature is None:
             return None
-
-        temperature = self._temperature
-        if self._offset is not None and temperature != 0:
-            temperature = temperature + int(self._offset)
-
-        return temperature
+        if self._offset is not None:
+            return self._temperature + int(self._offset)
+        return self._temperature
         
 
     @property

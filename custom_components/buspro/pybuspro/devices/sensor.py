@@ -15,13 +15,6 @@ class SensorType(Enum):
     UNIVERSAL_SWITCH = "universal_switch"
     SINGLE_CHANNEL = "single_channel"
 
-
-class DeviceFamily(Enum):
-    TWELVE_IN_ONE = "12in1"
-    DLP = "dlp"
-    PANEL = "panel"
-    SENSORS_IN_ONE = "sensors_in_one"
-
 from .control import _Read12in1SensorStatus, _ReadStatusOfUniversalSwitch, _ReadStatusOfChannels, _ReadFloorHeatingStatus, \
     _ReadDryContactStatus, _ReadSensorsInOneStatus, _ReadTemperatureStatus
 from .device import Device
@@ -94,21 +87,16 @@ class Sensor(Device):
             _LOGGER.debug(f"Sensors-in-one data received - temp:{self._current_temperature}, brightness:{self._brightness}, humidity:{self._current_humidity}, motion:{self._motion_sensor}, dc1:{self._dry_contact_1_status}, dc2:{self._dry_contact_2_status}")        
             self._call_device_updated()
 
-        elif telegram.operate_code == OperateCode.ReadTemperatureStatusResponse:
-            if self._channel_number == telegram.payload[0]:
-                self._temperature = struct.unpack('>8h', telegram.payload[1])
-                _LOGGER.debug(f"Temperature data received for channel {self._channel_number} - temp:{self._temperature}")            
-                self._call_device_updated()
-
         elif telegram.operate_code == OperateCode.ReadFloorHeatingStatusResponse:
             self._current_temperature = telegram.payload[1]
             _LOGGER.debug(f"Floor heating temperature received - temp:{self._current_temperature}")        
             self._call_device_updated()
 
-        elif telegram.operate_code == OperateCode.BroadcastTemperatureResponse: # not sure if this is correct
-            self._current_temperature = telegram.payload[1]
-            _LOGGER.debug(f"Temperature broadcast received - temp:{self._current_temperature}")        
-            self._call_device_updated()
+        elif telegram.operate_code in [OperateCode.BroadcastTemperatureResponse,OperateCode.ReadTemperatureStatusResponse]:
+            if self._channel_number is not None and self._channel_number == telegram.payload[0]:
+                self._current_temperature = telegram.payload[1]
+                _LOGGER.debug(f"Temperature received - temp:{self._current_temperature}")
+                self._call_device_updated()
 
         elif telegram.operate_code == OperateCode.ReadStatusOfUniversalSwitchResponse:
             switch_number = telegram.payload[0]
@@ -156,13 +144,7 @@ class Sensor(Device):
 
 
     async def read_sensor_status(self):
-        if self._device_family is not None and self._device_family == DeviceFamily.PANEL and self._sensor_type is not None and self._sensor_type == SensorType.TEMPERATURE:
-            _LOGGER.debug(f"Reading iTouch panel temperature status for device {self._device_address}")
-            rts = _ReadTemperatureStatus(self._buspro)
-            rts.subnet_id, rts.device_id = self._device_address
-            rts.channel_number = 1
-            await rts.send()
-        elif self._device_family is not None and self._device_family == DeviceFamily.DLP:
+        if self._device_family is not None and self._device_family == DeviceFamily.DLP:
             _LOGGER.debug(f"Reading DLP floor heating status for device {self._device_address}")
             rfhs = _ReadFloorHeatingStatus(self._buspro)
             rfhs.subnet_id, rfhs.device_id = self._device_address
@@ -189,13 +171,14 @@ class Sensor(Device):
             rsous.subnet_id, rsous.device_id = self._device_address
             rsous.switch_number = self._universal_switch_number
             await rsous.send()
-        elif self._sensor_type is not None and self._sensor_type == SensorType.TEMPERATURE and self._channel_number is not None:
-            _LOGGER.debug(f"Reading temperature status for device {self._device_address}, channel {self._channel_number}")
+        elif self._sensor_type is not None and self._sensor_type == SensorType.TEMPERATURE:
+            channel = self._channel_number if self._channel_number is not None else 1
+            _LOGGER.debug(f"Reading temperature status for device {self._device_address}, channel {channel}")
             rts = _ReadTemperatureStatus(self._buspro)
             rts.subnet_id, rts.device_id = self._device_address
-            rts.channel_number = self._channel_number
+            rts.channel_number = channel
             await rts.send()
-        elif self._channel_number is not None:
+        elif self._sensor_type is not None and self._channel_number is not None:
             _LOGGER.debug(f"Reading channel status for device {self._device_address}")
             rsoc = _ReadStatusOfChannels(self._buspro)
             rsoc.subnet_id, rsoc.device_id = self._device_address

@@ -56,7 +56,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
                 vol.Optional(CONF_UNIT_OF_MEASUREMENT, default=DEFAULT_CONF_UNIT_OF_MEASUREMENT): cv.string,
                 vol.Optional(CONF_DEVICE, default=DEFAULT_CONF_DEVICE): vol.All(cv.string, validate_device_family),
                 vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_CONF_SCAN_INTERVAL): cv.positive_int,                
-                vol.Optional(CONF_OFFSET, default=DEFAULT_CONF_OFFSET): cv.integer,
+                vol.Optional(CONF_OFFSET, default=DEFAULT_CONF_OFFSET): vol.Coerce(float),
                 vol.Optional(CONF_DEVICE_CLASS): DEVICE_CLASSES_SCHEMA,
             })
         ])

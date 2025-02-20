@@ -1,9 +1,9 @@
-from enum import Enum
+from enum import Enum, IntEnum
 import voluptuous as vol
 
-class SuccessOrFailure(Enum):
-    Success = b'\xF8'
-    Failure = b'\xF5'
+class SuccessOrFailure(IntEnum):
+    Success = 248 # 0xF8
+    Failure = 245 # 0xF5
 
 
 class DeviceType(Enum):
@@ -74,7 +74,6 @@ class OperateCode(Enum):
     ReadStatusOfUniversalSwitchResponse = b'\xE0\x19'
     BroadcastStatusOfUniversalSwitch = b'\xE0\x17'
 
-    Broadcast12in1SensorStatusResponse = b'\x16\x44'
     Read12in1SensorStatus = b'\x16\x45'
     Read12in1SensorStatusResponse = b'\x16\x46'
     Broadcast12in1SensorStatusAutoResponse = b'\x16\x47'

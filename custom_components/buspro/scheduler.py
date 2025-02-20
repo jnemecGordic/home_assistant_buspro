@@ -4,7 +4,6 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
-from homeassistant.core import callback
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,19 +48,6 @@ class Scheduler:
         return sorted(entities_without_interval, key=lambda item: item[1]['next_read_time'])
 
     async def read_entities_periodically(self):
-        # wait to start until HA is running
-        if not self.hass.is_running:
-            startup_event = asyncio.Event()
-            
-            @callback
-            def ha_started(_):
-                _LOGGER.info("Home Assistant started - beginning periodic entity reading")
-                startup_event.set()
-                
-            self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, ha_started)
-            await startup_event.wait()
-            
-        # main loop
         while not self.hass.is_stopping:            
             self._now = self.hass.loop.time()
             sorted_entities_with_interval = self._get_sorted_entities_with_interval()

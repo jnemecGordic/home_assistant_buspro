@@ -16,16 +16,20 @@ from homeassistant.const import (
 )
 from homeassistant.const import (
     EVENT_HOMEASSISTANT_STOP,
+    EVENT_HOMEASSISTANT_STARTED,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-
+from .pybuspro.buspro import Buspro
 from custom_components.buspro.scheduler import Scheduler
 
 _LOGGER = logging.getLogger(__name__)
 
 DATA_BUSPRO = "buspro"
 DEPENDENCIES = []
+DEFAULT_BROADCAST_ADDRESS = "192.168.10.255"
+DEFAULT_BROADCAST_PORT = 6000
+
 
 DEFAULT_CONF_NAME = ""
 
@@ -71,51 +75,52 @@ CONFIG_SCHEMA = vol.Schema({
     })
 }, extra=vol.ALLOW_EXTRA)
 
+
+
+async def _setup_buspro(hass: HomeAssistant, config_data: dict) -> bool:
+    """Common initialization for both YAML and Config Entry."""
+    if DATA_BUSPRO in hass.data:
+        old_module = hass.data[DATA_BUSPRO]
+        await old_module.stop(None)
+
+    host = config_data.get(CONF_BROADCAST_ADDRESS, DEFAULT_BROADCAST_ADDRESS)
+    port = config_data.get(CONF_BROADCAST_PORT, DEFAULT_BROADCAST_PORT)
+
+    module = BusproModule(hass, host, port)
+    await module.start()
+    module.register_services()
+    
+    hass.data[DATA_BUSPRO] = module
+
+    async def start_scheduler(_):
+        await module.start_scheduler()
+
+    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, start_scheduler)
+    return True
+
 async def async_setup(hass: HomeAssistant, config: dict):
-    """Setup the Buspro component."""
+    """Setup from YAML configuration."""
     if DATA_BUSPRO not in config:
         return True
-
-    host = config[DATA_BUSPRO][CONF_BROADCAST_ADDRESS]
-    port = config[DATA_BUSPRO][CONF_BROADCAST_PORT]
-
-    hass.data[DATA_BUSPRO] = BusproModule(hass, host, port)
-    await hass.data[DATA_BUSPRO].start()
-
-    hass.data[DATA_BUSPRO].register_services()    
-    return True
+    return await _setup_buspro(hass, config[DATA_BUSPRO])
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
-    """Setup the Buspro component."""
-    hass.data.setdefault(DATA_BUSPRO, {})
-
-    host = config_entry.data.get(CONF_BROADCAST_ADDRESS, "192.168.10.255")
-    port = config_entry.data.get(CONF_BROADCAST_PORT, 6000)
-
-    hass.data[DATA_BUSPRO] = BusproModule(hass, host, port)
-    await hass.data[DATA_BUSPRO].start()
-
-    hass.data[DATA_BUSPRO].register_services()
-
-    # Start the scheduler after setting up entities
-    hass.async_create_task(hass.data[DATA_BUSPRO].start_scheduler())
-
-    return True
+    """Setup from Config Entry (UI)."""    
+    if (not hass.is_running) and (DATA_BUSPRO in hass.data):
+        _LOGGER.debug("Home Assistant is starting and Buspro module already exists, skipping configuration")
+        return True
+        
+    return await _setup_buspro(hass, config_entry.data)
 
 
 class BusproModule:
     def __init__(self, hass, host, port):
         self.hass = hass
-        self.connected = False
-        self.hdl = None
+        self.connected = False        
         self.gateway_address_send_receive = ((host, port), ('', port))
-        self.init_hdl()
+        self.hdl = Buspro(self.gateway_address_send_receive, self.hass.loop)        
         self.scheduler = Scheduler(hass)
         self.entity_lock = asyncio.Lock()
-
-    def init_hdl(self):
-        from .pybuspro.buspro import Buspro
-        self.hdl = Buspro(self.gateway_address_send_receive, self.hass.loop)
 
     async def start(self):
         await self.hdl.start(state_updater=False)

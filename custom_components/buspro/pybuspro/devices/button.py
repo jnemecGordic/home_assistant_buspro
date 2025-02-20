@@ -2,30 +2,28 @@ import logging
 from .device import Device
 from ..helpers.enums import OperateCode
 from .control import _PanelControl
+from .panel import Panel
 
 _LOGGER = logging.getLogger(__name__)
 
-class Button(Device):
-    """HDL button device."""
+class Button:
+    """Representation of a single button on a HDL panel."""
     
-    def __init__(self, buspro, device_address, button_number, name=""):
-        super().__init__(buspro, device_address, name)
+    def __init__(self, panel, button_number: int, name: str = ""):
+        """Initialize the button.
+        
+        Args:
+            panel: Panel device instance
+            button_number: Button number on the panel
+            name: Optional name for the button
+        """
+        self._panel = panel
         self._button_number = button_number
-        self._buspro = buspro
-        self._device_address = device_address
         self._name = name
 
-    async def press(self, value=False):
-        """Send panel control command."""
-        _LOGGER.debug(f"Sending panel control for button {self._button_number} at {self._device_address} with value {value}")
-
-        pc = _PanelControl(self._buspro)
-        pc.subnet_id, pc.device_id = self._device_address
-        pc.remark = 18
-        pc.key_number = self._button_number
-        pc.key_status = 1 if value else 0
-        await pc.send()
-
+    async def press(self, value: bool = False):
+        """Press the button."""
+        await self._panel.press_button(self._button_number, value)
 
     @property
     def button_number(self):
@@ -33,6 +31,11 @@ class Button(Device):
         return self._button_number
 
     @property
+    def name(self):
+        """Return the display name of this button."""
+        return self._name
+
+    @property
     def device_identifier(self):
         """Return unique ID."""
-        return f"{self._device_address}-button-{self._button_number}"
+        return f"{self._panel.device_identifier}-button-{self._button_number}"

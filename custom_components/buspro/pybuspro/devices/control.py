@@ -37,7 +37,11 @@ class _Control:
 
         elif type(control) == _PanelControl:
             operate_code = OperateCode.PanelControl
-            payload = [control.remark, control.key_number, control.key_status]            
+            payload = [control.remark, control.key_number, control.key_status]
+
+        elif type(control) == _ReadPanelStatus:
+            operate_code = OperateCode.ReadPanelStatus
+            payload = [control.remark, control.key_number]            
 
         elif type(control) == _ReadStatusOfUniversalSwitch:
             operate_code = OperateCode.ReadStatusOfUniversalSwitch
@@ -71,7 +75,7 @@ class _Control:
             operate_code = OperateCode.ControlFloorHeatingStatus
             payload = [control.temperature_type, control.status, control.mode, control.normal_temperature,
                        control.day_temperature, control.night_temperature, control.away_temperature]
-
+            
         else:
             return None
 
@@ -199,4 +203,10 @@ class _PanelControl(_Control):
         self.key_number = None
         self.key_status = None
 
-
+class _ReadPanelStatus(_Control):
+    def __init__(self, buspro):
+        super().__init__(buspro)
+                
+        self.remark = None
+        self.key_number = None
+        

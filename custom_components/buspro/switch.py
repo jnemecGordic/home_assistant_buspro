@@ -15,6 +15,7 @@ from homeassistant.const import (CONF_NAME, CONF_DEVICES, CONF_SCAN_INTERVAL, CO
 from homeassistant.core import callback
 
 from custom_components.buspro.pybuspro.devices.switch import Switch
+from custom_components.buspro.pybuspro.devices.panel import Panel
 
 from ..buspro import DATA_BUSPRO
 from .pybuspro.helpers.enums import DeviceFamily, validate_device_family
@@ -51,11 +52,17 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         address2 = address.split('.')
         device_address = (int(address2[0]), int(address2[1]))
         channel_number = int(address2[2])
-        _LOGGER.debug("Adding switch '{}' with address {} and channel number {} scan interval {}".format(name, device_address, channel_number,scan_interval))
 
-        switch = Switch(hdl, device_address, channel_number, name)
+        if device_family_str == DeviceFamily.PANEL.value:
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Adding panel switch '{name}' with address {device_address} and channel {channel_number}")
+            device = Panel(hdl, device_address, channel_number, name)
+        else:
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Adding switch '{name}' with address {device_address} and channel {channel_number}")
+            device = Switch(hdl, device_address, channel_number, name)
 
-        devices.append(BusproSwitch(hass, switch, scan_interval))
+        devices.append(BusproSwitch(hass, device, scan_interval))
 
     async_add_entities(devices)
 

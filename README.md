@@ -53,6 +53,21 @@ switch:
   + **X.X.X** _(Required)_: The address of the device on the format `<subnet ID>.<device ID>.<channel number>`
     + **name** _(string) (Required)_: The name of the device
 
+It is also possible to use the switch to control buttons on control panels (switches) on the wall.
+For this, you need to specify the `device` parameter as `panel`.
+
+```yaml
+switch:
+  - platform: buspro
+    devices:
+      "1.79.1":
+        name: Living Room Panel Button 1
+        device: panel
+      "1.79.2":
+        name: Front Door Panel Button 2
+        device: panel
+```
+
 #### Sensor platform
 
 To use your Buspro sensor in your installation, add the following to your configuration.yaml file: 

@@ -99,7 +99,9 @@ class OperateCode(Enum):
     
 
     PanelControl = b'\xE3\xD8'
-    PanelControlResponse = b'\xE3\xD9'    
+    PanelControlResponse = b'\xE3\xD9'
+    ReadPanelStatus = b'\xE3\xDA'
+    ReadPanelStatusResponse = b'\xE3\xDB'
 
 
     """

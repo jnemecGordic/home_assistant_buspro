@@ -8,6 +8,7 @@ import homeassistant.helpers.config_validation as cv
 
 from custom_components.buspro import DATA_BUSPRO
 from custom_components.buspro.helpers import wait_for_buspro
+from custom_components.buspro.pybuspro.devices.panel import Panel
 from .pybuspro.devices import Button
 
 
@@ -52,21 +53,19 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     devices = []
 
     for address, device_config in config[CONF_DEVICES].items():
-        name = device_config[CONF_NAME]
+        name = device_config[CONF_NAME]        
         
-        # Zpracování adresy ve formátu "subnet.device.button.state"
         address_parts = address.split('.')
-        if len(address_parts) != 4:
-            _LOGGER.error(f"Invalid address format for button '{name}': {address}. Use format: subnet.device.button.on|off")
-            continue
-            
         device_address = (int(address_parts[0]), int(address_parts[1]))
         button_number = int(address_parts[2])
-        value = address_parts[3].lower() == "on"  # "on" = True, "off" = False
+        value = address_parts[3].lower() == "on"
 
-        _LOGGER.debug(f"Adding button '{name}' with address {device_address}, button number {button_number}, value {value}")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Adding button '{name}' with address {device_address}, button number {button_number}, value {value}")
         
-        button = Button(hdl, device_address, button_number, name)
+        
+        panel = Panel(hdl, device_address, name)
+        button = Button(panel, button_number, name)
         devices.append(BusproButton(hass, button, value))
 
     async_add_entities(devices)

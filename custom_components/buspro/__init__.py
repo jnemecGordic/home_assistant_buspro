@@ -20,6 +20,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
+from custom_components.buspro.helpers import BUSPRO_READY
 from custom_components.buspro.scheduler import Scheduler
 
 _LOGGER = logging.getLogger(__name__)
@@ -83,10 +84,7 @@ async def async_setup(hass: HomeAssistant, config: dict):
     await hass.data[DATA_BUSPRO].start()
 
     hass.data[DATA_BUSPRO].register_services()
-
-    # Start the scheduler after setting up entities
-    hass.async_create_task(hass.data[DATA_BUSPRO].start_scheduler())
-
+    BUSPRO_READY.set()
     return True
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:

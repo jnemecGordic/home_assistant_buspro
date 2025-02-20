@@ -1,4 +1,5 @@
 """Support for HDL Buspro buttons."""
+import asyncio
 import logging
 import voluptuous as vol
 from homeassistant.components.button import ButtonEntity, PLATFORM_SCHEMA
@@ -6,6 +7,7 @@ from homeassistant.const import CONF_NAME, CONF_DEVICES
 import homeassistant.helpers.config_validation as cv
 
 from custom_components.buspro import DATA_BUSPRO
+from custom_components.buspro.helpers import wait_for_buspro
 from .pybuspro.devices import Button
 
 
@@ -41,8 +43,11 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_DEVICES): {validate_button_address: DEVICE_SCHEMA},
 })
 
+
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the Buspro button devices."""
+    if not await wait_for_buspro(hass, DATA_BUSPRO):
+        return False
     hdl = hass.data[DATA_BUSPRO].hdl
     devices = []
 

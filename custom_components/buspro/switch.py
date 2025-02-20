@@ -5,6 +5,7 @@ For more details about this platform, please refer to the documentation at
 https://home-assistant.io/components/...
 """
 
+import asyncio
 import logging
 
 import homeassistant.helpers.config_validation as cv
@@ -13,8 +14,11 @@ from homeassistant.components.switch import SwitchEntity, PLATFORM_SCHEMA
 from homeassistant.const import (CONF_NAME, CONF_DEVICES, CONF_SCAN_INTERVAL, CONF_DEVICE)
 from homeassistant.core import callback
 
+from custom_components.buspro.pybuspro.devices.switch import Switch
+
 from ..buspro import DATA_BUSPRO
 from .pybuspro.helpers.enums import DeviceFamily, validate_device_family
+from .helpers import wait_for_buspro
 
 DEFAULT_CONF_DEVICE = "None"
 
@@ -34,8 +38,9 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 # noinspection PyUnusedLocal
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up Buspro switch devices."""
-    from .pybuspro.devices import Switch
-
+    if not await wait_for_buspro(hass, DATA_BUSPRO):
+        return False
+        
     hdl = hass.data[DATA_BUSPRO].hdl
     devices = []
 

@@ -2,6 +2,7 @@
 This component provides binary sensor support for Buspro.
 """
 
+import asyncio
 import logging
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -16,6 +17,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import callback
 
+from custom_components.buspro.helpers import wait_for_buspro
 from custom_components.buspro.pybuspro.devices.sensor import SensorType
 from .pybuspro.helpers.enums import DeviceFamily, validate_device_family
 from .pybuspro.devices.sensor import Sensor, SensorType
@@ -44,7 +46,9 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 # noinspection PyUnusedLocal
 async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
     """Set up Buspro binary sensor devices."""
-
+    
+    if not await wait_for_buspro(hass, DATA_BUSPRO):
+        return False
     hdl = hass.data[DATA_BUSPRO].hdl
     devices = []
 

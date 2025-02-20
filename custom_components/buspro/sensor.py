@@ -5,7 +5,10 @@ For more details about this platform, please refer to the documentation at
 https://home-assistant.io/components/...
 """
 
+import asyncio
 import logging
+
+from custom_components.buspro.helpers import wait_for_buspro
 from .pybuspro.helpers.enums import DeviceFamily, validate_device_family
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -56,7 +59,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
                 vol.Optional(CONF_UNIT_OF_MEASUREMENT, default=DEFAULT_CONF_UNIT_OF_MEASUREMENT): cv.string,
                 vol.Optional(CONF_DEVICE, default=DEFAULT_CONF_DEVICE): vol.All(cv.string, validate_device_family),
                 vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_CONF_SCAN_INTERVAL): cv.positive_int,                
-                vol.Optional(CONF_OFFSET, default=DEFAULT_CONF_OFFSET): vol.Coerce(float),
+                vol.Optional(CONF_OFFSET, default=DEFAULT_CONF_OFFSET): vol.Coerce(int),
                 vol.Optional(CONF_DEVICE_CLASS): DEVICE_CLASSES_SCHEMA,
             })
         ])
@@ -69,6 +72,9 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
     # noinspection PyUnresolvedReferences
     from .pybuspro.devices import Sensor
 
+    if not await wait_for_buspro(hass, DATA_BUSPRO):
+        return False
+    
     hdl = hass.data[DATA_BUSPRO].hdl
     devices = []
 

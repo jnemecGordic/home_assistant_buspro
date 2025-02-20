@@ -3,12 +3,13 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.core import callback
 
 _LOGGER = logging.getLogger(__name__)
 
 class Scheduler:
     def __init__(self, hass):
-        _LOGGER.debug("Initializing Scheduler")
         self.hass = hass
         self.entities_to_read = {}
         self.default_read_interval = timedelta(seconds=10)
@@ -49,22 +50,34 @@ class Scheduler:
         return sorted(entities_without_interval, key=lambda item: item[1]['next_read_time'])
 
     async def read_entities_periodically(self):
-        while True:
-            await asyncio.sleep(1)
+        # čekání na plné spuštění HA
+        if not self.hass.is_running:
+            startup_event = asyncio.Event()
+            
+            @callback
+            def ha_started(_):
+                _LOGGER.info("Home Assistant started - beginning periodic entity reading")
+                startup_event.set()
+                
+            self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, ha_started)
+            await startup_event.wait()
+            
+        # hlavní smyčka
+        while not self.hass.is_stopping:            
             now = datetime.now()
-
             sorted_entities_with_interval = self._get_sorted_entities_with_interval(now)
 
             for entity_id, info in sorted_entities_with_interval:
-                await self.process_entity_reading(entity_id, info, info['scan_interval'])
+                await self.process_entity_reading(entity_id, info, info['scan_interval'],now)
                 break
             else:
                 sorted_entities_without_interval = self._get_sorted_entities_without_interval(now)
                 for entity_id, info in sorted_entities_without_interval:
-                    await self.process_entity_reading(entity_id, info, self.default_read_interval)
+                    await self.process_entity_reading(entity_id, info, self.default_read_interval,now)
                     break
+            await asyncio.sleep(1)
 
-    async def process_entity_reading(self, entity_id, info, interval):
+    async def process_entity_reading(self, entity_id, info, interval,now=datetime.now()):
         _LOGGER.debug(f"Entity {entity_id} is due for reading")
         try:
             _LOGGER.info(f"Reading data from entity {entity_id}")
@@ -72,8 +85,7 @@ class Scheduler:
                 await self.hass.services.async_call(
                     'homeassistant', 'update_entity', {'entity_id': entity_id}
                 )
-                if entity_id in self.entities_to_read:
-                    now = datetime.now()
+                if entity_id in self.entities_to_read:                    
                     self.entities_to_read[entity_id]['last_read'] = now
                     self.entities_to_read[entity_id]['next_read_time'] = now + interval
             else:

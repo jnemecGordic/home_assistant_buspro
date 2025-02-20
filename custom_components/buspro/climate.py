@@ -5,6 +5,7 @@ For more details about this platform, please refer to the documentation at
 https://home-assistant.io/components/...
 """
 
+import asyncio
 import logging
 from typing import Optional, List
 
@@ -26,10 +27,13 @@ from homeassistant.const import (
 )
 from homeassistant.core import callback
 
+from custom_components.buspro.helpers import wait_for_buspro
+from custom_components.buspro.pybuspro.devices.sensor import Sensor
+
 # from homeassistant.helpers.entity import Entity
 from ..buspro import DATA_BUSPRO
 # noinspection PyUnresolvedReferences
-from .pybuspro.devices.climate import ControlFloorHeatingStatus
+from .pybuspro.devices.climate import Climate, ControlFloorHeatingStatus
 # noinspection PyUnresolvedReferences
 from .pybuspro.helpers.enums import OnOffStatus
 
@@ -75,10 +79,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 # noinspection PyUnusedLocal
 async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
     """Set up Buspro switch devices."""
-    # noinspection PyUnresolvedReferences
-    from .pybuspro.devices import Climate
-    from .pybuspro.devices import Sensor
-
+    if not await wait_for_buspro(hass, DATA_BUSPRO):
+        return False
     hdl = hass.data[DATA_BUSPRO].hdl
     devices = []
 

@@ -85,6 +85,7 @@ class BusproSwitch(SwitchEntity):
         async def after_update_callback(device):
             """Call after device was updated."""
             self.async_write_ha_state()
+            await self._hass.data[DATA_BUSPRO].scheduler.device_updated(self.entity_id)
 
         self._device.register_device_updated_cb(after_update_callback)
 

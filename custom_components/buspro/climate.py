@@ -160,9 +160,9 @@ class BusproClimate(ClimateEntity):
                             f"IsOn: {self._is_on}, " \
                             f"Mode: {self._device.mode}, " \
                             f"TargetTemp: {self._device.target_temperature}")
-
-            if self._hass is not None:
-                self.async_write_ha_state()
+            
+            self.async_write_ha_state()
+            await self._hass.data[DATA_BUSPRO].scheduler.device_updated(self.entity_id)
 
         async def after_relay_sensor_update_callback(device):
             """Call after device was updated."""

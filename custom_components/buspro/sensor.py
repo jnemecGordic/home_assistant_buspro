@@ -142,14 +142,14 @@ class BusproSensor(Entity):
     def async_register_callbacks(self):
         """Register callbacks to update hass after device was changed."""
 
-        # noinspection PyUnusedLocal
         async def after_update_callback(device):
             """Call after device was updated."""
             if self._hass is not None:
                 self._temperature = self._device.temperature
                 self._brightness = self._device.brightness
-                self._humidity = self._device.humidity
+                self._humidity = self._device.humidity                
                 self.async_write_ha_state()
+                await self._hass.data[DATA_BUSPRO].scheduler.device_updated(self.entity_id)
 
         self._device.register_device_updated_cb(after_update_callback)
 

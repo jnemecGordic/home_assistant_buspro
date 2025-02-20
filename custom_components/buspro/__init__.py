@@ -22,6 +22,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from .pybuspro.buspro import Buspro
 from custom_components.buspro.scheduler import Scheduler
+from .helpers import signal_buspro_ready
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -94,8 +95,9 @@ async def _setup_buspro(hass: HomeAssistant, config_data: dict) -> bool:
 
     async def start_scheduler(_):
         await module.start_scheduler()
-
+        
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, start_scheduler)
+    signal_buspro_ready()
     return True
 
 async def async_setup(hass: HomeAssistant, config: dict):
@@ -128,9 +130,12 @@ class BusproModule:
         self.connected = True
 
     async def start_scheduler(self):
+        """Start the scheduler."""
         await self.scheduler.read_entities_periodically()
 
     async def stop(self, event):
+        """Stop the module."""        
+        await self.scheduler.stop()
         await self.hdl.stop()
 
     async def entity_initialized(self, entity):

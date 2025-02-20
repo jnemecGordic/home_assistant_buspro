@@ -53,16 +53,14 @@ class Sensor(Device):
     def _telegram_received_cb(self, telegram):
         if telegram.operate_code in [OperateCode.Read12in1SensorStatusResponse,OperateCode.Broadcast12in1SensorStatusAutoResponse]:
             success_or_fail = telegram.payload[0]
-
-            self._current_temperature = telegram.payload[1] - 20
-            self._brightness =  (telegram.payload[2] * 256) + telegram.payload[3]            
-            self._motion_sensor = telegram.payload[4]
-            self._sonic = telegram.payload[5]
-            self._dry_contact_1_status = telegram.payload[6]
-            self._dry_contact_2_status = telegram.payload[7]
-            _LOGGER.debug(f"12in1 sensor data received - temp:{self._current_temperature}, brightness:{self._brightness}, motion:{self._motion_sensor}, sonic:{self._sonic}, dc1:{self._dry_contact_1_status}, dc2:{self._dry_contact_2_status}")
-            if success_or_fail == SuccessOrFailure.Success:                
-                _LOGGER.debug(f"12in1 sensor data sucesfully received")
+            if success_or_fail == SuccessOrFailure.Success:
+                self._current_temperature = telegram.payload[1] - 20
+                self._brightness =  (telegram.payload[2] * 256) + telegram.payload[3]            
+                self._motion_sensor = telegram.payload[4]
+                self._sonic = telegram.payload[5]
+                self._dry_contact_1_status = telegram.payload[6]
+                self._dry_contact_2_status = telegram.payload[7]
+                _LOGGER.debug(f"12in1 sensor data received - temp:{self._current_temperature}, brightness:{self._brightness}, motion:{self._motion_sensor}, sonic:{self._sonic}, dc1:{self._dry_contact_1_status}, dc2:{self._dry_contact_2_status}")
                 self._call_device_updated()
             else:
                 _LOGGER.error(f"12in1 sensor data failed to receive - {telegram.payload}")

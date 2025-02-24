@@ -54,8 +54,7 @@ class UniversalSwitch(Device):
     async def _set(self, switch_status):
         self._switch_status = switch_status
 
-        us = _UniversalSwitch(self._buspro)
-        us.subnet_id, us.device_id = self._device_address
+        us = _UniversalSwitch(self._buspro, self._device_address)        
         us.switch_number = self._switch_number
         us.switch_status = self._switch_status
         await us.send()
@@ -66,8 +65,7 @@ class UniversalSwitch(Device):
             if run_from_init:
                 await asyncio.sleep(1)
 
-            read_status_of_universal_switch = _ReadStatusOfUniversalSwitch(self._buspro)
-            read_status_of_universal_switch.subnet_id, read_status_of_universal_switch.device_id = self._device_address
+            read_status_of_universal_switch = _ReadStatusOfUniversalSwitch(self._buspro, self._device_address)            
             read_status_of_universal_switch.switch_number = self._switch_number
             await read_status_of_universal_switch.send()
 

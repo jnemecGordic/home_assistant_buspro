@@ -33,8 +33,7 @@ class Panel(Device):
     async def press_button(self, button_number: int, value: bool = False):
         """Send panel control command for button press."""
         _LOGGER.debug(f"Sending panel control for button {button_number} at {self._device_address} with value {value}")
-        pc = _PanelControl(self._buspro)
-        pc.subnet_id, pc.device_id = self._device_address
+        pc = _PanelControl(self._buspro, self._device_address)        
         pc.remark = PANEL_CONTROL_REMARK
         pc.key_number = button_number
         pc.key_status = 1 if value else 0
@@ -54,8 +53,7 @@ class Panel(Device):
 
     async def read_status(self):
         """Read channel status."""
-        rps = _ReadPanelStatus(self._buspro)
-        rps.subnet_id, rps.device_id = self._device_address
+        rps = _ReadPanelStatus(self._buspro, self._device_address)        
         rps.key_number = self._channel_number
         rps.remark = PANEL_CONTROL_REMARK
         await rps.send()

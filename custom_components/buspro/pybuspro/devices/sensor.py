@@ -146,42 +146,35 @@ class Sensor(Device):
     async def read_sensor_status(self):
         if self._device_family is not None and self._device_family == DeviceFamily.DLP:
             _LOGGER.debug(f"Reading DLP floor heating status for device {self._device_address}")
-            rfhs = _ReadFloorHeatingStatus(self._buspro)
-            rfhs.subnet_id, rfhs.device_id = self._device_address
+            rfhs = _ReadFloorHeatingStatus(self._buspro, self._device_address)            
             await rfhs.send()
         elif self._device_family is not None and self._device_family == DeviceFamily.SENSORS_IN_ONE:
             _LOGGER.debug(f"Reading sensors-in-one status for device {self._device_address}")
-            rsios = _ReadSensorsInOneStatus(self._buspro)
-            rsios.subnet_id, rsios.device_id = self._device_address
+            rsios = _ReadSensorsInOneStatus(self._buspro, self._device_address)            
             await rsios.send()
         elif self._device_family is not None and self._device_family == DeviceFamily.TWELVE_IN_ONE:
             _LOGGER.debug(f"Reading 12-in-1 sensor status for device {self._device_address}")
-            rsios = _Read12in1SensorStatus(self._buspro)
-            rsios.subnet_id, rsios.device_id = self._device_address
+            rsios = _Read12in1SensorStatus(self._buspro, self._device_address)
             await rsios.send()            
         elif self._sensor_type is not None and self._sensor_type == SensorType.DRY_CONTACT:
             _LOGGER.debug(f"Reading dry contact status for device {self._device_address}, switch {self._switch_number}")
-            rdcs = _ReadDryContactStatus(self._buspro)
-            rdcs.subnet_id, rdcs.device_id = self._device_address
+            rdcs = _ReadDryContactStatus(self._buspro, self._device_address)            
             rdcs.switch_number = self._switch_number
             await rdcs.send()
         elif self._universal_switch_number is not None:
             _LOGGER.debug(f"Reading universal switch status for device {self._device_address}, switch {self._universal_switch_number}")
-            rsous = _ReadStatusOfUniversalSwitch(self._buspro)
-            rsous.subnet_id, rsous.device_id = self._device_address
+            rsous = _ReadStatusOfUniversalSwitch(self._buspro, self._device_address)            
             rsous.switch_number = self._universal_switch_number
             await rsous.send()
         elif self._sensor_type is not None and self._sensor_type == SensorType.TEMPERATURE:
             channel = self._channel_number if self._channel_number is not None else 1
             _LOGGER.debug(f"Reading temperature status for device {self._device_address}, channel {channel}")
-            rts = _ReadTemperatureStatus(self._buspro)
-            rts.subnet_id, rts.device_id = self._device_address
+            rts = _ReadTemperatureStatus(self._buspro, self._device_address)            
             rts.channel_number = channel
             await rts.send()
         elif self._sensor_type is not None and self._channel_number is not None:
             _LOGGER.debug(f"Reading channel status for device {self._device_address}")
-            rsoc = _ReadStatusOfChannels(self._buspro)
-            rsoc.subnet_id, rsoc.device_id = self._device_address
+            rsoc = _ReadStatusOfChannels(self._buspro, self._device_address)            
             await rsoc.send()
 
 

@@ -51,19 +51,16 @@ class Cover(Device):
 
     async def read_cover_status(self):
         """Read current status from device."""
-        csc = _CurtainReadStatus(self._buspro)        
+        csc = _CurtainReadStatus(self._buspro, self._device_address)        
         csc.channel = self._channel
-        csc.subnet_id = self._device_address[0]
-        csc.device_id = self._device_address[1]        
         await csc.send()
 
     async def _send_command(self, command: CoverCommand):
         """Send command to cover device."""
-        csc = _CurtainSwitchControl(self._buspro)
+        csc = _CurtainSwitchControl(self._buspro, self._device_address)
         csc.channel = self._channel
         csc.state = CoverStatus.STOP
-        csc.subnet_id = self._device_address[0]
-        csc.device_id = self._device_address[1]
+        
         
         if command in [CoverCommand.STEP_OPEN, CoverCommand.STEP_CLOSE]:
             csc.channel += 2
@@ -71,8 +68,7 @@ class Cover(Device):
         if command in [CoverCommand.OPEN, CoverCommand.STEP_OPEN]:
             csc.state = CoverStatus.OPEN
         elif command in [CoverCommand.CLOSE, CoverCommand.STEP_CLOSE]:
-            csc.state = CoverStatus.CLOSE
-        _LOGGER.debug(f"Cover command:{self._device_address} {csc.channel} {csc.state}")
+            csc.state = CoverStatus.CLOSE        
         await csc.send()
 
     async def stop(self):

@@ -40,8 +40,7 @@ class Switch(Device):
         await self._set(intensity, 0)
 
     async def read_status(self):
-        rsos = _ReadStatusOfSwitch(self._buspro)
-        rsos.subnet_id, rsos.device_id = self._device_address
+        rsos = _ReadStatusOfSwitch(self._buspro, self._device_address)        
         await rsos.send()
 
     @property
@@ -65,8 +64,7 @@ class Switch(Device):
         generics = Generics()
         (minutes, seconds) = generics.calculate_minutes_seconds(running_time_seconds)
 
-        scc = _SingleChannelControl(self._buspro)
-        scc.subnet_id, scc.device_id = self._device_address
+        scc = _SingleChannelControl(self._buspro, self._device_address)        
         scc.channel_number = self._channel
         scc.channel_level = intensity
         scc.running_time_minutes = minutes

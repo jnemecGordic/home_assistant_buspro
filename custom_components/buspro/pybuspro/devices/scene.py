@@ -32,7 +32,6 @@ class Scene(Device):
     """
 
     async def run(self):
-        scene_control = _SceneControl(self._buspro)
-        scene_control.subnet_id, scene_control.device_id = self._device_address
+        scene_control = _SceneControl(self._buspro, self._device_address)        
         scene_control.area_number, scene_control.scene_number = self._scene_address
         await scene_control.send()

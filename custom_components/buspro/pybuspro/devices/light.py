@@ -50,8 +50,7 @@ class Light(Device):
         await self._set(intensity, running_time_seconds)
 
     async def read_status(self):
-        rsoch = _ReadStatusOfChannels(self._buspro)
-        rsoch.subnet_id, rsoch.device_id = self._device_address
+        rsoch = _ReadStatusOfChannels(self._buspro, self._device_address)        
         await rsoch.send()
 
     @property
@@ -84,8 +83,7 @@ class Light(Device):
         generics = Generics()
         (minutes, seconds) = generics.calculate_minutes_seconds(running_time_seconds)
 
-        scc = _SingleChannelControl(self._buspro)
-        scc.subnet_id, scc.device_id = self._device_address
+        scc = _SingleChannelControl(self._buspro, self._device_address)        
         scc.channel_number = self._channel
         scc.channel_level = intensity
         scc.running_time_minutes = minutes

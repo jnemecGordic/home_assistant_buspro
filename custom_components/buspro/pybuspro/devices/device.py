@@ -49,9 +49,7 @@ class Device(object):
             if run_from_init:
                 await asyncio.sleep(3)
 
-            read_status_of_channels = _ReadStatusOfChannels(self._buspro)
-            read_status_of_channels.subnet_id, read_status_of_channels.device_id = self._device_address
-
+            read_status_of_channels = _ReadStatusOfChannels(self._buspro,self._device_address)
             await read_status_of_channels.send()
 
         asyncio.ensure_future(read_current_state_of_channels(), loop=self._buspro.loop)

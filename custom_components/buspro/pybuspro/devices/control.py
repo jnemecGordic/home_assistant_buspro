@@ -3,10 +3,10 @@ from ..helpers.enums import OperateCode
 
 
 class _Control:
-    def __init__(self, buspro):
+    def __init__(self, buspro, device_address):
         self._buspro = buspro
-        self.subnet_id = None
-        self.device_id = None
+        self.subnet_id = device_address[0]
+        self.device_id = device_address[1]
 
     @staticmethod
     def build_telegram_from_control(control):
@@ -103,16 +103,16 @@ class _Control:
 
 
 class _GenericControl(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
 
         self.payload = None
         self.operate_code = None
 
 
 class _SingleChannelControl(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
 
         self.channel_number = None
         self.channel_level = None
@@ -121,65 +121,65 @@ class _SingleChannelControl(_Control):
 
 
 class _SceneControl(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
 
         self.area_number = None
         self.scene_number = None
 
 
 class _ReadStatusOfChannels(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
         # no more properties
 
 
 class _UniversalSwitch(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
 
         self.switch_number = None
         self.switch_status = None
 
 
 class _ReadStatusOfUniversalSwitch(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
 
         self.switch_number = None
 
 class _ReadStatusOfSwitch(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
 
 
 class _Read12in1SensorStatus(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
         # no more properties
 
 
 class _ReadSensorsInOneStatus(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
         # no more properties
 
 
 class _ReadTemperatureStatus(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
         self.channel_number = None
 
 
 class _ReadFloorHeatingStatus(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
         # no more properties
 
 
 class _ControlFloorHeatingStatus(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
 
         self.temperature_type = None
         self.status = None
@@ -191,39 +191,38 @@ class _ControlFloorHeatingStatus(_Control):
 
 
 class _ReadDryContactStatus(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
 
         self.switch_number = None
 
 
 class _PanelControl(_Control):
-    """Panel control command."""
-    
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    """Panel control command."""    
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
                 
         self.remark = None
         self.key_number = None
         self.key_status = None
 
 class _ReadPanelStatus(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
                 
         self.remark = None
         self.key_number = None
         
 class _CurtainSwitchControl(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
                 
         self.channel = None
         self.state = None
 
 class _CurtainReadStatus(_Control):
-    def __init__(self, buspro):
-        super().__init__(buspro)
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
                         
         self.channel = None
         

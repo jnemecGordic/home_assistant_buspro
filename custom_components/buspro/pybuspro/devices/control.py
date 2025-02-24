@@ -76,6 +76,14 @@ class _Control:
             payload = [control.temperature_type, control.status, control.mode, control.normal_temperature,
                        control.day_temperature, control.night_temperature, control.away_temperature]
             
+        elif type(control) == _CurtainSwitchControl:
+            operate_code = OperateCode.CurtainSwitchControl
+            payload = [control.channel,control.state]
+
+        elif type(control) == _CurtainReadStatus:
+            operate_code = OperateCode.ReadStatusofCurtainSwitch
+            payload = [control.channel]
+
         else:
             return None
 
@@ -91,10 +99,6 @@ class _Control:
 
     async def send(self):
         telegram = self.telegram
-
-        # if telegram.target_address[1] == 100:
-        #     print("==== {}".format(str(telegram)))
-
         await self._buspro.network_interface.send_telegram(telegram)
 
 
@@ -210,3 +214,17 @@ class _ReadPanelStatus(_Control):
         self.remark = None
         self.key_number = None
         
+class _CurtainSwitchControl(_Control):
+    def __init__(self, buspro):
+        super().__init__(buspro)
+                
+        self.channel = None
+        self.state = None
+
+class _CurtainReadStatus(_Control):
+    def __init__(self, buspro):
+        super().__init__(buspro)
+                        
+        self.channel = None
+        
+

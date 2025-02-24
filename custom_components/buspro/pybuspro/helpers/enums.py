@@ -102,6 +102,11 @@ class OperateCode(Enum):
     ReadPanelStatus = b'\xE3\xDA'
     ReadPanelStatusResponse = b'\xE3\xDB'
 
+    CurtainSwitchControl = b'\xE3\xE0'
+    CurtainSwitchControlResponse = b'\xE3\xE1'
+    ReadStatusofCurtainSwitch = b'\xE3\xE2'
+    ReadStatusofCurtainSwitchResponse = b'\xE3\xE3'
+
 
     """
     # 

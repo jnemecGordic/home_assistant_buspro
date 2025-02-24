@@ -6,6 +6,7 @@ from .scene import Scene
 from .sensor import Sensor
 from .switch import Switch
 from .button import Button
+from .cover import Cover
 from .universal_switch import UniversalSwitch
 from .sensor import SensorType, DeviceFamily, Sensor
 
@@ -17,6 +18,7 @@ __all__ = [
     'Sensor',
     'Switch',
     'Button',
+    'Cover',
     'UniversalSwitch',
     'SensorType',
     'DeviceFamily'

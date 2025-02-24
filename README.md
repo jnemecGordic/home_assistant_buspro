@@ -198,6 +198,44 @@ button:
 
 When pressed, the button sends panel control command with the configured state value to the specified device address.
 
+#### Cover platform
+
+To use your Buspro covers in your installation, add the following to your configuration.yaml file:
+
+```yaml
+cover:
+  - platform: buspro
+    devices:
+      - address: "1.89.1"  # subnet.device.channel
+        name: Living Room Blinds        
+      - address: "1.90.2"
+        name: Bedroom Blinds
+        invert: true  # Invert open/close behavior
+```
+
+The cover platform supports the following features:
+- Opening and closing operations
+- Stop command to halt movement
+- Tilt functionality using precise step control
+  - Small upward step (tilt up)
+  - Small downward step (tilt down)
+
+Configuration parameters:
++ **devices** _(Required)_: A list of devices to set up
+  + **address** _(string) (Required)_: The address of the device in format `<subnet ID>.<device ID>.<channel>` where:
+    + **subnet ID** - subnet number (1-255)
+    + **device ID** - device number (1-255)
+    + **channel** - channel number (1-2, one device can control 2 covers)
+  + **name** _(string) (Required)_: The name of the device
+  + **invert** _(boolean) (Optional)_: Inverts the position reporting and control:
+    - Default (false): 0=closed, 100=open
+    - Inverted (true): 0=open, 100=closed
+
+The cover platform supports:
+- Full open/close control
+- Stop function
+- Small step movement mapped as tilt control
+
 ---
 ## Services
 
@@ -219,3 +257,4 @@ Domain: buspro
 Service: set_universal_switch
 Service Data: {"address": [1,74], "switch_number": 100, "status": 1}
 ```
+````

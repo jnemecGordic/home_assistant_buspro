@@ -171,9 +171,9 @@ class HDLBusproCover(CoverEntity):
         """No polling needed within Buspro unless explicitly set."""
         return False
     
-    async def async_update(self):
-        """Update cover state."""        
-        await self._device.read_cover_status()
+#    async def async_update(self):
+#        """Update cover state."""        
+#        await self._device.read_cover_status()
 
     @property
     def unique_id(self):

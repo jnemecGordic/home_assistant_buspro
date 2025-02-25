@@ -32,8 +32,17 @@ class Scheduler:
         self._cancel_timer = None
 
     async def add_entity(self, entity) -> None:
-        """Add entity to scheduler."""
+        """Add entity to scheduler.
+        
+        Args:
+            entity: Entity to schedule for periodic updates.
+                    Must implement async_update method.
+        """
         entity_id = entity.entity_id
+        
+        if not hasattr(entity, 'async_update'):
+            return
+        
         scan_interval = entity.scan_interval
         
         if scan_interval is None or scan_interval == 0:
@@ -54,7 +63,7 @@ class Scheduler:
         )
         self.entities_map[entity_id] = info
         heapq.heappush(target_heap, info)
-        _LOGGER.debug(f"Adding entity {entity_id} to scheduler scan_interval {seconds}s")
+        _LOGGER.debug(f"Added entity {entity_id} to scheduler (scan_interval={seconds}s)")
 
     async def read_entities_periodically(self) -> None:
         """Register periodic reading of entities."""

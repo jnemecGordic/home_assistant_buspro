@@ -1,12 +1,15 @@
+import logging
 from ..core.telegram import Telegram
 from ..helpers.enums import OperateCode
-
+_LOGGER = logging.getLogger(__name__)
 
 class _Control:
     def __init__(self, buspro, device_address):
         self._buspro = buspro
         self.subnet_id = device_address[0]
         self.device_id = device_address[1]
+        #if _LOGGER.isEnabledFor(logging.DEBUG):
+        #    _LOGGER.debug("Control device_address: {}".format(device_address))
 
     @staticmethod
     def build_telegram_from_control(control):
@@ -83,6 +86,20 @@ class _Control:
         elif type(control) == _CurtainReadStatus:
             operate_code = OperateCode.ReadStatusofCurtainSwitch
             payload = [control.channel]
+        
+        elif type(control) == _ReadSecurityModule:
+            operate_code = OperateCode.ReadSecurityModule
+            _LOGGER.debug(f"ReadSecurityModule: {control.area}")
+            payload = [control.area]            
+
+        elif type(control) == _ArmSecurityModule:
+            operate_code = OperateCode.ArmSecurityModule
+            payload = [control.area,control.arm_type]
+            _LOGGER.debug(f"ArmSecurityModule: {control.area} : {control.arm_type}")
+
+        elif type(control) == _AlarmSecurityModule:
+            operate_code = OperateCode.AlarmSecurityModule
+            payload = [control.area]
 
         else:
             return None
@@ -227,3 +244,24 @@ class _CurtainReadStatus(_Control):
         self.channel = None
         
 
+class _ReadSecurityModule(_Control):
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
+                        
+        self.area = None
+
+class _ArmSecurityModule(_Control):
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
+                        
+        self.area = None
+        self.arm_type = None
+        
+class _AlarmSecurityModule(_Control):
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
+                        
+        self.area = None
+        
+
+        

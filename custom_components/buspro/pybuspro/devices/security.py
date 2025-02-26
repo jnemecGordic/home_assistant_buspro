@@ -64,13 +64,11 @@ class Security(Device):
 
         control = _ArmSecurityModule(self._buspro, self._device_address)
         control.area = self._area_id
-        control.arm_type = status.value
-        
-        # Log the control object and its properties
-        _LOGGER.debug(f"Created _ArmSecurityModule for {self._device_address}, "
-                     f"area: {control.area}, arm_type: {control.arm_type}")
-        
-        # Send the command and log the result
+        if status != SecurityStatus.DISARM:
+            control.arm_type = SecurityStatus.DISARM.value
+            await control.send()
+
+        control.arm_type = status.value        
         await control.send()
         
 

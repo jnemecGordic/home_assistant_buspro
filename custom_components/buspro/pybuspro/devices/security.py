@@ -33,18 +33,16 @@ class Security(Device):
         """
         super().__init__(buspro, device_address, name)
         self._status = SecurityStatus.DISARM
-        self._area_id = area_id
-        self._callbacks: List[Callable] = []
+        self._area_id = area_id        
         self._device_address = device_address
-        _LOGGER.debug(f"Initialized security device {device_address} for area {area_id}")
 
-    def register_device_updated_cb(self, callback: Callable):
-        """Register callback for device updates."""
-        self._callbacks.append(callback)
+        self.register_telegram_received_cb(self._telegram_received_cb)
+        _LOGGER.debug(f"Initialized security device {device_address} for area {area_id}")
+        
 
     def _telegram_received_cb(self, telegram):
         """Handle received telegram."""        
-        if telegram.operate_code in [OperateCode.SecurityModuleStatusResponse, OperateCode.ReadSecurityModuleStatusResponse]:
+        if telegram.operate_code in [OperateCode.ReadSecurityModuleResponse, OperateCode.ArmSecurityModuleResponse]:
             if len(telegram.payload) > 1 and telegram.payload[0] == self._area_id:
                 try:
                     new_status = SecurityStatus(telegram.payload[1])
@@ -67,11 +65,20 @@ class Security(Device):
             _LOGGER.error(f"Invalid security status: {status}")
             return
 
+        _LOGGER.debug(f"Setting security module {self._device_address} area {self._area_id} "
+                     f"status to {status.name} (value: {status.value})")
+
         control = _ArmSecurityModule(self._buspro, self._device_address)
         control.area = self._area_id
         control.arm_type = status.value
-        await control.send()
-        _LOGGER.debug(f"Setting security module {self._device_address} area {self._area_id} status to {status.name}")
+        
+        # Log the control object and its properties
+        _LOGGER.debug(f"Created _ArmSecurityModule for {self._device_address}, "
+                     f"area: {control.area}, arm_type: {control.arm_type}")
+        
+        # Send the command and log the result
+        result = await control.send()
+        _LOGGER.debug(f"Security command send result: {result}")
 
     @property
     def status(self) -> SecurityStatus:

@@ -141,7 +141,7 @@ class HDLBusproAlarmPanel(AlarmControlPanelEntity):
         elif self._device.status == SecurityStatus.NIGHT_WITH_GUEST:
             return AlarmControlPanelState.ARMED_CUSTOM_BYPASS
         else:
-            return AlarmControlPanelState.DISARMED
+            return None
 
 
 

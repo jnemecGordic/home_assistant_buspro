@@ -32,7 +32,7 @@ class Security(Device):
             name: Device name
         """
         super().__init__(buspro, device_address, name)
-        self._status = SecurityStatus.DISARM
+        self._status = None
         self._area_id = area_id        
         self._device_address = device_address
 
@@ -43,15 +43,9 @@ class Security(Device):
     def _telegram_received_cb(self, telegram):
         """Handle received telegram."""        
         if telegram.operate_code in [OperateCode.ReadSecurityModuleResponse, OperateCode.ArmSecurityModuleResponse]:
-            if len(telegram.payload) > 1 and telegram.payload[0] == self._area_id:
-                try:
-                    new_status = SecurityStatus(telegram.payload[1])
-                    if new_status != self._status:
-                        self._status = new_status
-                        self._call_device_updated()
-                        _LOGGER.debug(f"Security module {self._device_address} status changed to {self._status.name}")
-                except ValueError:
-                    _LOGGER.warning(f"Received invalid security status: {telegram.payload[1]} for area {self._area_id}")
+            if len(telegram.payload) > 1 and telegram.payload[0] == self._area_id and telegram.payload[1] >= 1 and telegram.payload[1] <= 6:
+                self._status = SecurityStatus(telegram.payload[1])
+                self._call_device_updated()
 
     async def read_security_status(self):
         """Read current security status from device."""
@@ -77,8 +71,8 @@ class Security(Device):
                      f"area: {control.area}, arm_type: {control.arm_type}")
         
         # Send the command and log the result
-        result = await control.send()
-        _LOGGER.debug(f"Security command send result: {result}")
+        await control.send()
+        
 
     @property
     def status(self) -> SecurityStatus:

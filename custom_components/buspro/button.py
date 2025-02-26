@@ -85,8 +85,10 @@ class BusproButton(ButtonEntity):
 
     @property
     def unique_id(self):
-        """Return unique ID."""
-        return f"{self._device.device_identifier}-{self._value}"
+        """Return unique ID for this button."""
+        subnet, device = self._device._panel._device_address
+        button = getattr(self._device, "_button_number", "N")
+        return f"{subnet}-{device}-{button}-{self._value}-button"
 
     async def async_press(self) -> None:
         """Handle the button press."""

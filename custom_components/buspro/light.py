@@ -163,6 +163,8 @@ class BusproLight(LightEntity):
 
     @property
     def unique_id(self):
-        """Return the unique id."""
-        return self._device.device_identifier
+        """Return unique ID for this light."""
+        subnet, device = self._device._device_address
+        channel = getattr(self._device, "_channel_number", "N")
+        return f"{subnet}-{device}-{channel}-light"
 

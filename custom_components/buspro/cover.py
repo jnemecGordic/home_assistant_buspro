@@ -178,4 +178,6 @@ class HDLBusproCover(CoverEntity):
     @property
     def unique_id(self):
         """Return unique ID for this cover."""
-        return f"{self._device._device_address}-{self._device._channel}-cover"
+        subnet, device = self._device._device_address
+        channel = getattr(self._device, "_channel", "N")
+        return f"{subnet}-{device}-{channel}-cover"

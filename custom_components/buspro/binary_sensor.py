@@ -160,8 +160,13 @@ class BusproBinarySensor(BinarySensorEntity):
 
     @property
     def unique_id(self):
-        """Return the unique id."""
-        return f"{self._device.device_identifier}-{self._sensor_type.value}"
+        """Return unique ID for this binary sensor."""
+        subnet, device = self._device._device_address
+        sensor_type = self._sensor_type.name if hasattr(self._sensor_type, "name") else "generic"
+        channel = getattr(self._device, "_channel_number", 
+                   getattr(self._device, "_switch_number", 
+                   getattr(self._device, "_universal_switch_number", "N")))
+        return f"{subnet}-{device}-{channel}-{sensor_type}"
 
     @property
     def scan_interval(self):

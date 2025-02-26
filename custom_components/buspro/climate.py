@@ -296,8 +296,9 @@ class BusproClimate(ClimateEntity):
 
     @property
     def unique_id(self):
-        """Return the unique id."""
-        return self._device.device_identifier
+        """Return unique ID for this climate entity."""
+        subnet, device = self._device._device_address
+        return f"{subnet}-{device}-climate"
 
     @property
     def scan_interval(self):
@@ -315,7 +316,6 @@ class BusproClimate(ClimateEntity):
         target_temperature = int(temperature)
 
         _LOGGER.debug(f"Setting '{preset}' temperature to {target_temperature}")
-
         if preset == PRESET_NONE:
             climate_control.normal_temperature = target_temperature
         elif preset == PRESET_HOME:

@@ -1,7 +1,7 @@
 """HDL Buspro security/alarm module implementation."""
 from enum import IntEnum
 import logging
-from typing import Tuple, Optional, List, Callable
+from typing import Tuple
 
 from custom_components.buspro.pybuspro.devices.control import _ArmSecurityModule, _ReadSecurityModule
 

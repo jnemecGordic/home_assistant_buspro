@@ -63,14 +63,5 @@ class Panel(Device):
         """Return if channel is on."""
         return self._is_on
 
-    @property
-    def device_identifier(self):
-        """Return unique ID."""
-        return f"{self._device_address}-panel-channel-{self._channel_number}"
-
-    def __del__(self):
-        """Clean up callbacks on deletion."""
-        if hasattr(self, '_buspro'):
-            self._buspro.unregister_panel_status(self._device_address, self._handle_panel_status)
 
 

@@ -18,7 +18,7 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
 )
 import homeassistant.helpers.config_validation as cv
-
+from homeassistant.core import callback
 from custom_components.buspro import DATA_BUSPRO
 from custom_components.buspro.helpers import wait_for_buspro
 from .pybuspro.devices.security import Security, SecurityStatus
@@ -111,7 +111,19 @@ class HDLBusproAlarmPanel(AlarmControlPanelEntity):
         
         self._attr_code_format = None
         self._attr_code_arm_required = False
-        self._device.register_device_updated_cb(self.schedule_update_ha_state)
+        self.async_register_callbacks()
+        
+
+    @callback
+    def async_register_callbacks(self):
+        """Register callbacks to update hass after device was changed."""
+
+        async def after_update_callback(device):
+            """Call after device was updated."""
+            self.async_write_ha_state()
+            await self._hass.data[DATA_BUSPRO].scheduler.device_updated(self.entity_id)
+        
+        self._device.register_device_updated_cb(after_update_callback)
 
     async def async_added_to_hass(self):
         """When entity is added to hass."""

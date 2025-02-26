@@ -236,6 +236,49 @@ The cover platform supports:
 - Stop function
 - Small step movement mapped as tilt control
 
+#### Security Module
+
+To use your HDL Buspro security module in your installation, add the following to your configuration.yaml file:
+
+```yaml
+alarm_control_panel:
+  - platform: buspro
+    devices:
+      - address: "1.89.1"  # subnet.device.area
+        name: "Home Security"
+        scan_interval: 60
+      - address: "1.89.2"
+        name: "Office Security"
+```
+
+The security module supports the following features:
+- Disarming the alarm system
+- Arming in multiple modes (home, away, night, vacation, etc.)
+
+Configuration parameters:
++ **devices** _(Required)_: A list of devices to set up
+  + **address** _(string) (Required)_: The address of the device in format `<subnet ID>.<device ID>.<area>` where:
+    + **subnet ID** - subnet number (1-255)
+    + **device ID** - device number (1-255)
+    + **area** - area ID (1-8)
+  + **name** _(string) (Required)_: The name of the security module
+  + **scan_interval** _(int) (Optional)_: Polling interval in seconds (default: 0 = no polling)
+
+**Important**: You must configure your HDL security module to allow access from the Home Assistant integration device address (254.253). This permission should be set in your HDL configuration software.
+
+The alarm control panel supports the following states, mapped to HDL Buspro security module states:
+
+| Home Assistant State | HDL Buspro State     |
+|----------------------|----------------------|
+| DISARMED             | Disarm               |
+| ARMED_HOME           | Day Arm              |
+| ARMED_NIGHT          | Night Arm            |
+| ARMED_AWAY           | Away Arm             |
+| ARMED_VACATION       | Vacation Arm         |
+| ARMED_CUSTOM_BYPASS  | Night with Guest Arm |
+
+The security module offers comprehensive alarm management capabilities that integrate directly with the HDL Buspro security subsystem.
+
 ---
 ## Services
 

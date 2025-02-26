@@ -34,8 +34,3 @@ class Button:
     def name(self):
         """Return the display name of this button."""
         return self._name
-
-    @property
-    def device_identifier(self):
-        """Return unique ID."""
-        return f"{self._panel.device_identifier}-button-{self._button_number}"

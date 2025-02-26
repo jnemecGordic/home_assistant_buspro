@@ -237,15 +237,6 @@ class Sensor(Device):
             return False
 
 
-    @property
-    def device_identifier(self):
-        device_family = self._device_family.value if self._device_family is not None else 'N'
-        sensor_type = self._sensor_type.value if self._sensor_type is not None else 'N'
-        universal_switch_number = self._universal_switch_number if self._universal_switch_number is not None else 'N'
-        channel_number = self._channel_number if self._channel_number is not None else 'N'
-        switch_number = self._switch_number if self._switch_number is not None else 'N'
-        return f"{self._device_address}-{device_family}-{sensor_type}-{universal_switch_number}-{channel_number}-{switch_number}"
-
     def _call_read_current_status_of_sensor(self, run_from_init=False):
 
         async def read_current_status_of_sensor():

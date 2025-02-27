@@ -265,7 +265,7 @@ Configuration parameters:
   + **scan_interval** _(int) (Optional)_: Polling interval in seconds (default: 0 = no polling)
   + **time_sync** _(boolean) (Optional)_: Enable/disable automatic time synchronization with Home Assistant time (default: true). When enabled, the integration synchronizes the security module's internal clock with Home Assistant time at the start of every hour. **Note**: This setting applies to the entire security module device (subnet.device) not just a specific area. If you define multiple areas for the same device and set time_sync=false for any of them, time synchronization will be disabled for the entire device.
 
-**Important**: You must configure your HDL security module to allow access from the Home Assistant integration device address (254.253). This permission should be set in your HDL configuration software.
+**Important**: You must configure your HDL security module to allow access from the Home Assistant integration device address (254.253). This permission should be set in HDL Buspro Setup Tool.
 
 The alarm control panel supports the following states, mapped to HDL Buspro security module states:
 

@@ -11,7 +11,7 @@ class Light(Device):
 
         self._buspro = buspro
         self._device_address = device_address
-        self._channel = channel_number
+        self._channel_number = channel_number
         self._brightness = 0
         self._previous_brightness = None
         self.register_telegram_received_cb(self._telegram_received_cb)
@@ -26,13 +26,13 @@ class Light(Device):
             channel = telegram.payload[0]
             # success = telegram.payload[1]
             brightness = telegram.payload[2]
-            if channel == self._channel:
+            if channel == self._channel_number:
                 self._brightness = brightness
                 self._set_previous_brightness(self._brightness)
                 self._call_device_updated()
         elif telegram.operate_code == OperateCode.ReadStatusOfChannelsResponse:
-            if self._channel <= telegram.payload[0]:
-                self._brightness = telegram.payload[self._channel]
+            if self._channel_number <= telegram.payload[0]:
+                self._brightness = telegram.payload[self._channel_number]
                 self._set_previous_brightness(self._brightness)
                 self._call_device_updated()
         elif telegram.operate_code == OperateCode.SceneControlResponse:
@@ -55,7 +55,7 @@ class Light(Device):
 
     @property
     def device_identifier(self):
-        return f"{self._device_address}-{self._channel}"
+        return f"{self._device_address}-{self._channel_number}"
 
     @property
     def supports_brightness(self):
@@ -84,7 +84,7 @@ class Light(Device):
         (minutes, seconds) = generics.calculate_minutes_seconds(running_time_seconds)
 
         scc = _SingleChannelControl(self._buspro, self._device_address)        
-        scc.channel_number = self._channel
+        scc.channel_number = self._channel_number
         scc.channel_level = intensity
         scc.running_time_minutes = minutes
         scc.running_time_seconds = seconds

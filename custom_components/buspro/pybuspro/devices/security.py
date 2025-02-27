@@ -38,6 +38,8 @@ class Security(Device):
 
         self.register_telegram_received_cb(self._telegram_received_cb)
         _LOGGER.debug(f"Initialized security device {device_address} for area {area_id}")
+        self._buspro.loop.create_task(self.read_security_status())
+        
         
 
     def _telegram_received_cb(self, telegram):

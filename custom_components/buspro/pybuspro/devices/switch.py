@@ -11,7 +11,7 @@ class Switch(Device):
 
         self._buspro = buspro
         self._device_address = device_address
-        self._channel = channel_number
+        self._channel_number = channel_number
         self._brightness = 0
         self.register_telegram_received_cb(self._telegram_received_cb)
         self._call_read_current_status_of_channels(run_from_init=True)
@@ -21,12 +21,12 @@ class Switch(Device):
             channel = telegram.payload[0]
             # success = telegram.payload[1]
             brightness = telegram.payload[2]
-            if channel == self._channel:
+            if channel == self._channel_number:
                 self._brightness = brightness
                 self._call_device_updated()
         elif telegram.operate_code == OperateCode.ReadStatusOfChannelsResponse:
-            if self._channel <= telegram.payload[0]:
-                self._brightness = telegram.payload[self._channel]
+            if self._channel_number <= telegram.payload[0]:
+                self._brightness = telegram.payload[self._channel_number]
                 self._call_device_updated()
         elif telegram.operate_code == OperateCode.SceneControlResponse:
             self._call_read_current_status_of_channels()
@@ -61,7 +61,7 @@ class Switch(Device):
         (minutes, seconds) = generics.calculate_minutes_seconds(running_time_seconds)
 
         scc = _SingleChannelControl(self._buspro, self._device_address)        
-        scc.channel_number = self._channel
+        scc.channel_number = self._channel_number
         scc.channel_level = intensity
         scc.running_time_minutes = minutes
         scc.running_time_seconds = seconds

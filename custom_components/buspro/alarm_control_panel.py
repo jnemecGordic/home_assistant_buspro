@@ -19,11 +19,25 @@ from homeassistant.const import (
 )
 import homeassistant.helpers.config_validation as cv
 from homeassistant.core import callback
+from homeassistant.helpers.restore_state import RestoreEntity
 from custom_components.buspro import DATA_BUSPRO
 from custom_components.buspro.helpers import wait_for_buspro
 from .pybuspro.devices.security import Security, SecurityStatus
 
 _LOGGER = logging.getLogger(__name__)
+
+# Mapping between Home Assistant states (key) and HDL Buspro SecurityStatus (value)
+STATE_MAP = {
+    AlarmControlPanelState.DISARMED: SecurityStatus.DISARM,
+    AlarmControlPanelState.ARMED_HOME: SecurityStatus.DAY,
+    AlarmControlPanelState.ARMED_NIGHT: SecurityStatus.NIGHT,
+    AlarmControlPanelState.ARMED_AWAY: SecurityStatus.AWAY,
+    AlarmControlPanelState.ARMED_VACATION: SecurityStatus.VACATION,
+    AlarmControlPanelState.ARMED_CUSTOM_BYPASS: SecurityStatus.NIGHT_WITH_GUEST,
+}
+
+# Create inverse mapping by swapping keys and values
+INVERSE_STATE_MAP = {v: k for k, v in STATE_MAP.items()}
 
 def validate_address(value: str) -> str:
     """Validate Buspro device address.
@@ -91,7 +105,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     return True
     
 
-class HDLBusproAlarmPanel(AlarmControlPanelEntity):
+class HDLBusproAlarmPanel(AlarmControlPanelEntity, RestoreEntity):
     """Representation of HDL Buspro Alarm Control Panel."""
 
     def __init__(self, hass, device, name, scan_interval=0):
@@ -129,6 +143,14 @@ class HDLBusproAlarmPanel(AlarmControlPanelEntity):
         """When entity is added to hass."""
         await super().async_added_to_hass()
         _LOGGER.debug(f"Added alarm control panel '{self._device._name}'")
+        
+        # Try to restore previous state
+        last_state = await self.async_get_last_state()
+        if last_state is not None and last_state.state in STATE_MAP:
+            # Set only internal object state without communicating with hardware
+            self._device._status = STATE_MAP[last_state.state]
+            _LOGGER.debug(f"Restored alarm panel '{self._name}' to previous state: {last_state.state}")
+        
         await self._hass.data[DATA_BUSPRO].entity_initialized(self)
         await self.async_update()
 
@@ -140,22 +162,10 @@ class HDLBusproAlarmPanel(AlarmControlPanelEntity):
     @property
     def alarm_state(self) -> AlarmControlPanelState:
         """Return the state of the alarm panel using AlarmControlPanelState enum."""
-        if self._device.status == SecurityStatus.DISARM:
-            return AlarmControlPanelState.DISARMED
-        elif self._device.status == SecurityStatus.DAY:
-            return AlarmControlPanelState.ARMED_HOME
-        elif self._device.status == SecurityStatus.NIGHT:
-            return AlarmControlPanelState.ARMED_NIGHT
-        elif self._device.status == SecurityStatus.AWAY:
-            return AlarmControlPanelState.ARMED_AWAY
-        elif self._device.status == SecurityStatus.VACATION:
-            return AlarmControlPanelState.ARMED_VACATION
-        elif self._device.status == SecurityStatus.NIGHT_WITH_GUEST:
-            return AlarmControlPanelState.ARMED_CUSTOM_BYPASS
-        else:
+        if self._device.status is None:
             return None
-
-
+            
+        return INVERSE_STATE_MAP.get(self._device.status, None)
 
     async def async_alarm_disarm(self, code=None):
         """Send disarm command."""

@@ -168,3 +168,9 @@ fabric.properties
 venv
 custom_components/buspro/test.py
 deploy.sh
+*.DS_Store
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+deploy*.sh

@@ -231,9 +231,17 @@ class BusproSensor(Entity):
     def unique_id(self):
         """Return unique ID for this sensor."""
         subnet, device = self._device._device_address
-        channel = getattr(self._device, "_channel_number", "N")
-        sensor_type = self._sensor_type.name if hasattr(self._sensor_type, "name") else "generic"
-        return f"{subnet}-{device}-{channel}-{sensor_type}"
+        
+        if self._sensor_type == SensorType.DRY_CONTACT:
+            channel = getattr(self._device, "_switch_number", "N")
+        elif self._sensor_type == SensorType.UNIVERSAL_SWITCH:
+            channel = getattr(self._device, "_universal_switch_number", "N")
+        elif self._sensor_type == SensorType.SINGLE_CHANNEL:
+            channel = getattr(self._device, "_channel_number", "N") 
+        else:
+            channel = "N"
+        
+        return f"{subnet}-{device}-{channel}-sensor-{self._sensor_type.value}"
 
     @property
     def scan_interval(self):

@@ -3,7 +3,7 @@ from enum import IntEnum
 import logging
 from typing import Tuple
 
-from custom_components.buspro.pybuspro.devices.control import _ArmSecurityModule, _ReadSecurityModule
+from custom_components.buspro.pybuspro.devices.control import _AlarmSecurityModule, _ArmSecurityModule, _ReadSecurityModule
 
 from ..helpers.enums import OperateCode
 from .device import Device
@@ -48,12 +48,23 @@ class Security(Device):
             if len(telegram.payload) > 1 and telegram.payload[0] == self._area_id and telegram.payload[1] >= 1 and telegram.payload[1] <= 6:
                 self._status = SecurityStatus(telegram.payload[1])
                 self._call_device_updated()
+        
+        if telegram.operate_code in [OperateCode.AlarmSecurityModuleResponse]:
+            if len(telegram.payload) > 1 and telegram.payload[0] == self._area_id:
+                _LOGGER.debug(f"AlarmSecurityModuleResponse: {telegram.payload}")
+        
 
     async def read_security_status(self):
         """Read current security status from device."""
         rsm = _ReadSecurityModule(self._buspro, self._device_address)
         rsm.area = self._area_id
         await rsm.send()
+
+        asm = _AlarmSecurityModule(self._buspro, self._device_address)
+        asm.area = self._area_id
+        await asm.send()
+
+
 
     async def set_status(self, status: SecurityStatus):
         """Set security module status."""

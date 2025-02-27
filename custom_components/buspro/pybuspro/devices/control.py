@@ -99,7 +99,20 @@ class _Control:
 
         elif type(control) == _AlarmSecurityModule:
             operate_code = OperateCode.AlarmSecurityModule
-            payload = [control.area]
+            payload = [control.area,0,0]
+            
+        elif type(control) == _ModifySystemDateandTime:
+            operate_code = OperateCode.ModifySystemDateandTime
+            now = control.custom_datetime
+            payload = [
+                now.year - 2000,
+                now.month,
+                now.day,
+                now.hour,
+                now.minute,
+                now.second,
+                (now.weekday() + 1) % 7
+            ]
 
         else:
             return None
@@ -264,4 +277,11 @@ class _AlarmSecurityModule(_Control):
         self.area = None
         
 
+class _ModifySystemDateandTime(_Control):
+    def __init__(self, buspro, device_address):
+        super().__init__(buspro, device_address)
+        self.custom_datetime = None
         
+    def set_datetime(self, dt):
+        """Set a specific datetime."""
+        self.custom_datetime = dt

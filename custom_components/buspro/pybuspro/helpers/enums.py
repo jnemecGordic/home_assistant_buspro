@@ -57,6 +57,8 @@ class OperateCode(Enum):
     AlarmSecurityModule = b'\x01\x0C'
     AlarmSecurityModuleResponse = b'\x01\x0D'
 
+    ModifySystemDateandTime = b'\xDA\x02'
+
 
 
     TIME_IF_FROM_LOGIC_OR_SECURITY = b'\xDA\x44'

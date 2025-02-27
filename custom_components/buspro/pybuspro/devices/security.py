@@ -2,8 +2,13 @@
 from enum import IntEnum
 import logging
 from typing import Tuple
+import datetime
 
-from custom_components.buspro.pybuspro.devices.control import _AlarmSecurityModule, _ArmSecurityModule, _ReadSecurityModule
+from custom_components.buspro.pybuspro.devices.control import (
+    _ArmSecurityModule, 
+    _ReadSecurityModule,
+    _ModifySystemDateandTime
+)
 
 from ..helpers.enums import OperateCode
 from .device import Device
@@ -83,4 +88,19 @@ class Security(Device):
     def status(self) -> SecurityStatus:
         """Get current security status."""
         return self._status
+
+    async def set_system_time(self, dt=None):
+        """Send system time synchronization command.
+        
+        Args:
+            dt: Optional datetime object to set. If None, current time is used.
+        """
+        if dt is None:
+            dt = datetime.datetime.now()
+            
+        _LOGGER.debug(f"Setting system time on {self._device_address} to {dt}")
+        
+        time_sync = _ModifySystemDateandTime(self._buspro, self._device_address)
+        time_sync.custom_datetime = dt
+        await time_sync.send()
 

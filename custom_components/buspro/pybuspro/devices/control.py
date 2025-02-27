@@ -100,7 +100,7 @@ class _Control:
         elif type(control) == _AlarmSecurityModule:
             operate_code = OperateCode.AlarmSecurityModule
             payload = [control.area,0,0]
-            
+
         elif type(control) == _ModifySystemDateandTime:
             operate_code = OperateCode.ModifySystemDateandTime
             now = control.custom_datetime
@@ -113,6 +113,7 @@ class _Control:
                 now.second,
                 (now.weekday() + 1) % 7
             ]
+            _LOGGER.debug(f"ModifySystemDateandTime: {payload}")
 
         else:
             return None

@@ -2,6 +2,7 @@
 import logging
 import re
 import voluptuous as vol
+from typing import ClassVar, Optional
 
 from homeassistant.components.alarm_control_panel import (
     PLATFORM_SCHEMA,
@@ -20,9 +21,12 @@ from homeassistant.const import (
 import homeassistant.helpers.config_validation as cv
 from homeassistant.core import callback
 from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.helpers.event import async_track_time_change
+from homeassistant.util import dt
 from custom_components.buspro import DATA_BUSPRO
 from custom_components.buspro.helpers import wait_for_buspro
 from .pybuspro.devices.security import Security, SecurityStatus
+from .pybuspro.devices.control import _ModifySystemDateandTime
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -107,7 +111,10 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
 class HDLBusproAlarmPanel(AlarmControlPanelEntity, RestoreEntity):
     """Representation of HDL Buspro Alarm Control Panel."""
-
+    
+    # Třídní proměnná pro sledování, zda již byla nastavena synchronizace času
+    _time_sync_registered: ClassVar[bool] = False
+    
     def __init__(self, hass, device, name, scan_interval=0):
         """Initialize alarm control panel entity."""
         self._name = name
@@ -151,8 +158,35 @@ class HDLBusproAlarmPanel(AlarmControlPanelEntity, RestoreEntity):
             self._device._status = STATE_MAP[last_state.state]
             _LOGGER.debug(f"Restored alarm panel '{self._name}' to previous state: {last_state.state}")
         
+        # Nastavíme časovou synchronizaci, pokud ještě nebyla nastavena
+        if not HDLBusproAlarmPanel._time_sync_registered:
+            self._register_time_sync()
+            HDLBusproAlarmPanel._time_sync_registered = True
+        
         await self._hass.data[DATA_BUSPRO].entity_initialized(self)
         await self.async_update()
+    
+    def _register_time_sync(self):
+        """Register time synchronization for this security module."""
+        
+        async def sync_time(now=None):
+            """Synchronize time to HDL Buspro security module."""
+            try:
+                current_time = dt.now()
+                _LOGGER.debug(f"Synchronizing HDL Buspro system time to {current_time}")
+                # Použijeme metodu set_system_time našeho security device
+                await self._device.set_system_time(current_time)
+                _LOGGER.debug(f"HDL Buspro time synchronized successfully to security module at {self._device._device_address}")
+            except Exception as e:
+                _LOGGER.error(f"Error synchronizing HDL Buspro time: {e}")
+        
+        # Pro testování: spustí každou minutu (v sekundě 0)
+        async_track_time_change(self._hass, sync_time, second=0)
+        
+        # Pro produkci: spustí každý den o půlnoci
+        # async_track_time_change(self._hass, sync_time, hour=0, minute=0, second=0)
+        
+        _LOGGER.info(f"Scheduled HDL Buspro time synchronization with security module at {self._device._device_address}")
 
     @property
     def name(self):

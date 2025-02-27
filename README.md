@@ -246,9 +246,10 @@ alarm_control_panel:
     devices:
       - address: "1.89.1"  # subnet.device.area
         name: "Home Security"
-        scan_interval: 60
+        scan_interval: 60        
       - address: "1.89.2"
         name: "Office Security"
+        time_sync: false
 ```
 
 The security module supports the following features:
@@ -257,12 +258,12 @@ The security module supports the following features:
 
 Configuration parameters:
 + **devices** _(Required)_: A list of devices to set up
-  + **address** _(string) (Required)_: The address of the device in format `<subnet ID>.<device ID>.<area>` where:
-    + **subnet ID** - subnet number (1-255)
+  + **address** _(string) (Required)_: The address of the device in format `<subnet ID>.<device ID>.<area>`  
     + **device ID** - device number (1-255)
     + **area** - area ID (1-8)
-  + **name** _(string) (Required)_: The name of the security module
+    + **name** _(string) (Required)_: The name of the security module area
   + **scan_interval** _(int) (Optional)_: Polling interval in seconds (default: 0 = no polling)
+  + **time_sync** _(boolean) (Optional)_: Enable/disable automatic time synchronization with Home Assistant time (default: true). When enabled, the integration synchronizes the security module's internal clock with Home Assistant time at the start of every hour. **Note**: This setting applies to the entire security module device (subnet.device) not just a specific area. If you define multiple areas for the same device and set time_sync=false for any of them, time synchronization will be disabled for the entire device.
 
 **Important**: You must configure your HDL security module to allow access from the Home Assistant integration device address (254.253). This permission should be set in your HDL configuration software.
 

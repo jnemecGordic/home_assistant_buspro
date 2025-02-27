@@ -113,8 +113,7 @@ class _Control:
                 now.second,
                 (now.weekday() + 1) % 7
             ]
-            _LOGGER.debug(f"ModifySystemDateandTime: {payload}")
-
+            
         else:
             return None
 
@@ -282,7 +281,3 @@ class _ModifySystemDateandTime(_Control):
     def __init__(self, buspro, device_address):
         super().__init__(buspro, device_address)
         self.custom_datetime = None
-        
-    def set_datetime(self, dt):
-        """Set a specific datetime."""
-        self.custom_datetime = dt

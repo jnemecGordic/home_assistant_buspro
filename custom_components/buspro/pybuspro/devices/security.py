@@ -48,10 +48,8 @@ class Security(Device):
             if len(telegram.payload) > 1 and telegram.payload[0] == self._area_id and telegram.payload[1] >= 1 and telegram.payload[1] <= 6:
                 self._status = SecurityStatus(telegram.payload[1])
                 self._call_device_updated()
-        
-        if telegram.operate_code in [OperateCode.AlarmSecurityModuleResponse]:
-            if len(telegram.payload) > 1 and telegram.payload[0] == self._area_id:
-                _LOGGER.debug(f"AlarmSecurityModuleResponse: {telegram.payload}")
+            elif len(telegram.payload) > 1 and telegram.payload[0] == self._area_id:
+                _LOGGER.error(f"Received invalid security status: {telegram.payload[1]}")
         
 
     async def read_security_status(self):
@@ -59,10 +57,6 @@ class Security(Device):
         rsm = _ReadSecurityModule(self._buspro, self._device_address)
         rsm.area = self._area_id
         await rsm.send()
-
-        asm = _AlarmSecurityModule(self._buspro, self._device_address)
-        asm.area = self._area_id
-        await asm.send()
 
 
 

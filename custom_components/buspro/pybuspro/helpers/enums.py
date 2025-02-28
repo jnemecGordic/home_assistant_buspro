@@ -61,7 +61,7 @@ class OperateCode(Enum):
 
 
 
-    TIME_IF_FROM_LOGIC_OR_SECURITY = b'\xDA\x44'
+    BroadcastSystemDateandTimeEveryMinute = b'\xDA\x44'
 
     # b'\x1947'
     # INFO_IF_FROM_12in1__1 = b'\x16\x47'

@@ -88,7 +88,7 @@ class Buspro:
 
             # Sender callback kun for oppgitt kanal
             if device_address == telegram.target_address or device_address == telegram.source_address:
-                if telegram.operate_code is not OperateCode.TIME_IF_FROM_LOGIC_OR_SECURITY:
+                if telegram.operate_code is not OperateCode.BroadcastSystemDateandTimeEveryMinute:
                     postfix = telegram_received_cb['postfix']
                     if postfix is not None:
                         telegram_received_cb['callback'](telegram, postfix)

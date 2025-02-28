@@ -6,6 +6,8 @@ https://home-assistant.io/...
 """
 import asyncio
 import logging
+from datetime import timedelta
+import math
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -23,6 +25,7 @@ from homeassistant.config_entries import ConfigEntry
 from .pybuspro.buspro import Buspro
 from custom_components.buspro.scheduler import Scheduler
 from .helpers import signal_buspro_ready
+from homeassistant.util import dt
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -123,11 +126,16 @@ class BusproModule:
         self.hdl = Buspro(self.gateway_address_send_receive, self.hass.loop)        
         self.scheduler = Scheduler(hass)
         self.entity_lock = asyncio.Lock()
+        self._time_sync_registered = False
 
     async def start(self):
         await self.hdl.start(state_updater=False)
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self.stop)
         self.connected = True
+        # Register time broadcaster when starting
+        if not self._time_sync_registered:
+            self._register_time_broadcaster()
+            self._time_sync_registered = True
 
     async def start_scheduler(self):
         """Start the scheduler."""
@@ -198,6 +206,33 @@ class BusproModule:
             DATA_BUSPRO, SERVICE_BUSPRO_UNIVERSAL_SWITCH,
             self.service_set_universal_switch,
             schema=SERVICE_BUSPRO_UNIVERSAL_SWITCH_SCHEMA)
+
+
+    def _register_time_broadcaster(self):
+        """Register broadcast time synchronization for displays."""
+        from homeassistant.helpers.event import async_track_time_change
+        from .pybuspro.devices.control import _BroadcastSystemDateandTimeEveryMinute
+        import asyncio
+        import time
+        
+        async def broadcast_time_precise(now=None):
+            """Broadcast time at the start of each minute."""
+            try:                
+                next_time = dt.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
+                telegram = _BroadcastSystemDateandTimeEveryMinute(self.hdl, (255, 255))
+                telegram.custom_datetime = next_time                
+                
+                wait_seconds = 60 - (time.time() % 60)
+                await asyncio.sleep(wait_seconds)
+                await telegram.send()                
+                
+            except Exception as e:
+                _LOGGER.error(f"Time broadcast error: {e}")
+        
+        
+        async_track_time_change(self.hass, broadcast_time_precise, second=59)
+        self.hass.async_create_task(broadcast_time_precise())
+
 
     '''
     def telegram_received_cb(self, telegram):

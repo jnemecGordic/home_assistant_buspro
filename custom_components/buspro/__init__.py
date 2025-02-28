@@ -7,7 +7,6 @@ https://home-assistant.io/...
 import asyncio
 import logging
 from datetime import timedelta
-import math
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -26,6 +25,7 @@ from .pybuspro.buspro import Buspro
 from custom_components.buspro.scheduler import Scheduler
 from .helpers import signal_buspro_ready
 from homeassistant.util import dt
+from .const import CONF_TIME_BROADCAST
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -89,8 +89,9 @@ async def _setup_buspro(hass: HomeAssistant, config_data: dict) -> bool:
 
     host = config_data.get(CONF_BROADCAST_ADDRESS, DEFAULT_BROADCAST_ADDRESS)
     port = config_data.get(CONF_BROADCAST_PORT, DEFAULT_BROADCAST_PORT)
+    time_broadcast = config_data.get(CONF_TIME_BROADCAST, True)
 
-    module = BusproModule(hass, host, port)
+    module = BusproModule(hass, host, port, time_broadcast)
     await module.start()
     module.register_services()
     
@@ -119,7 +120,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
 
 class BusproModule:
-    def __init__(self, hass, host, port):
+    def __init__(self, hass, host, port, time_broadcast=True):
         self.hass = hass
         self.connected = False        
         self.gateway_address_send_receive = ((host, port), ('', port))
@@ -127,13 +128,14 @@ class BusproModule:
         self.scheduler = Scheduler(hass)
         self.entity_lock = asyncio.Lock()
         self._time_sync_registered = False
+        self._time_broadcast_enabled = time_broadcast
 
     async def start(self):
         await self.hdl.start(state_updater=False)
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self.stop)
         self.connected = True
-        # Register time broadcaster when starting
-        if not self._time_sync_registered:
+        # Register time broadcaster only if enabled
+        if self._time_broadcast_enabled and not self._time_sync_registered:
             self._register_time_broadcaster()
             self._time_sync_registered = True
 

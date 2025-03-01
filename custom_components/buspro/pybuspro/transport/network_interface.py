@@ -1,7 +1,9 @@
+import logging
 from .udp_client import UDPClient
 from ..helpers.telegram_helper import TelegramHelper
 # from ..devices.control import Control
-
+import time
+_LOGGER = logging.getLogger(__name__)
 
 class NetworkInterface:
     def __init__(self, buspro, gateway_address_send_receive):
@@ -20,9 +22,6 @@ class NetworkInterface:
             telegram = self._th.build_telegram_from_udp_data(data, address)
             self.callback(telegram)
 
-    async def _send_message(self, message):
-        await self.udp_client.send_message(message)
-
     """
     public methods
     """
@@ -39,8 +38,8 @@ class NetworkInterface:
 
     async def send_telegram(self, telegram):
         message = self._th.build_send_buffer(telegram)
-
         gateway_address_send, _ = self.gateway_address_send_receive
-        self.buspro.logger.debug(self._th.build_telegram_from_udp_data(message, gateway_address_send))
-
         await self.udp_client.send_message(message)
+        
+        if self.buspro.logger.level == logging.DEBUG:
+            self.buspro.logger.debug(self._th.build_telegram_from_udp_data(message, gateway_address_send))

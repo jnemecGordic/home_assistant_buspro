@@ -5,7 +5,7 @@ import logging
 
 from .helpers.enums import *
 from .transport.network_interface import NetworkInterface
-
+_LOGGER = logging.getLogger(__name__)
 
 # ip, port = gateway_address
 # subnet_id, device_id, channel = device_address
@@ -44,6 +44,9 @@ class Buspro:
         self._telegram_received_cbs = []
 
         self.gateway_address_send_receive = gateway_address_send_receive
+        _LOGGER.debug(f"Buspro logger level: {self.logger.getEffectiveLevel()}")
+        _LOGGER.debug(f"Buspro telegram logger level: {self.telegram_logger.getEffectiveLevel()}")
+        
 
     def __del__(self):
         if self.started:

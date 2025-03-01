@@ -203,15 +203,13 @@ class BusproModule:
         device_address = call.data.get(SERVICE_BUSPRO_ATTR_ADDRESS)
         
         try:            
-            next_time = dt.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
             telegram = _ModifySystemDateandTime(self.hdl, device_address)
-            telegram.custom_datetime = next_time
-            
             wait_seconds = 1 - (time.time() % 1)
-            await asyncio.sleep(wait_seconds)
+            await asyncio.sleep(wait_seconds)            
+            telegram.custom_datetime = dt.now()
             
             await telegram.send()
-            _LOGGER.debug(f"Time synced with device {device_address}, set to {next_time}")
+            _LOGGER.debug(f"Time synced with device {device_address}, set to {telegram.custom_datetime}")
         except Exception as e:
             _LOGGER.error(f"Error syncing time with device {device_address}: {e}")
 

@@ -105,8 +105,24 @@ class SuccessOrFailure(IntEnum):
 
 
 class DeviceType(Enum):
-    NotSet = b'\x00\x00'
     PyBusPro = b'\xFF\xFC'
+    NotSet = b'\x00\x00'
+    SB_DN_6B0_10v = b'\x00\x11'   # Rele varme
+    SB_DN_SEC250K = b'\x0B\xE9'   # Sikkerhetsmodul
+    SB_CMS_12in1 = b'\x01\x34'    # 12i1
+    SB_DN_Logic960 = b'\x04\x53'  # Logikkmodul
+    SB_DLP2 = b'\x00\x86'         # DLP
+    SB_DLP = b'\x00\x95'          # DLP
+    SB_DLP_v2 = b'\x00\x9C'       # DLPv2    
+    SmartHDLTest = b'\xFF\xFD'
+    SetupTool = b'\xFF\xFE'
+    SB_WS8M = b'\x01\x2B'         # 8 keys panel
+    SB_CMS_8in1 = b'\x01\x35'     # 8i1
+    SB_DN_DT0601 = b'\x02\x60'    # 6ch Dimmer
+    HDL_MDT0601 = b'\x02\x6D'     # 6ch Dimmer ny type
+    SB_DN_R0816 = b'\x01\xAC'     # Rele
+    SB_DRY_4Z = b'\x00\x77'       # Dry contact
+    HDL_MSP07M = b'\x01\x50'      # Sensors in One    
 
 class OnOff(Enum):
     OFF = 0

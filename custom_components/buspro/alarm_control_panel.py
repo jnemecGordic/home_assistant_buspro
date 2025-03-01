@@ -2,7 +2,6 @@
 import logging
 import re
 import voluptuous as vol
-from typing import ClassVar, Optional, Dict, Tuple, Any
 
 from homeassistant.components.alarm_control_panel import (
     PLATFORM_SCHEMA,
@@ -21,12 +20,9 @@ from homeassistant.const import (
 import homeassistant.helpers.config_validation as cv
 from homeassistant.core import callback
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.helpers.event import async_track_time_change
-from homeassistant.util import dt
 from custom_components.buspro import DATA_BUSPRO
 from custom_components.buspro.helpers import wait_for_buspro
 from .pybuspro.devices.security import Security, SecurityStatus
-from .pybuspro.devices.control import _ModifySystemDateandTime
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,9 +39,6 @@ STATE_MAP = {
 # Create inverse mapping by swapping keys and values
 INVERSE_STATE_MAP = {v: k for k, v in STATE_MAP.items()}
 
-# Singleton dict for tracking time sync state across all devices
-# Format: {(subnet_id, device_id): bool}
-TIME_SYNC_DEVICES: Dict[Tuple[int, int], bool] = {}
 
 def validate_address(value: str) -> str:
     """Validate Buspro device address.
@@ -76,8 +69,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
         vol.Schema({
             vol.Required(CONF_ADDRESS): validate_address,
             vol.Required(CONF_NAME): cv.string,
-            vol.Optional(CONF_SCAN_INTERVAL, default=0): cv.positive_int,
-            vol.Optional('time_sync', default=True): cv.boolean,
+            vol.Optional(CONF_SCAN_INTERVAL, default=0): cv.positive_int,            
         })
     ])
 })
@@ -96,12 +88,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             continue
             
         name = device_config[CONF_NAME]
-        scan_interval = device_config.get(CONF_SCAN_INTERVAL, 0)
-        time_sync = device_config.get('time_sync', True)
+        scan_interval = device_config.get(CONF_SCAN_INTERVAL, 0)        
         subnet_id, device_id, area_id = map(int, match.groups())
         
         device = Security(hdl, (subnet_id, device_id), area_id, name)
-        panel = HDLBusproAlarmPanel(hass, device, name, scan_interval, time_sync)
+        panel = HDLBusproAlarmPanel(hass, device, name, scan_interval)
         devices.append(panel)
 
     async_add_entities(devices)
@@ -110,13 +101,12 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 class HDLBusproAlarmPanel(AlarmControlPanelEntity, RestoreEntity):
     """Representation of HDL Buspro Alarm Control Panel."""
     
-    def __init__(self, hass, device, name, scan_interval=0, time_sync=True):
+    def __init__(self, hass, device, name, scan_interval=0):
         """Initialize alarm control panel entity."""
         self._name = name
         self._hass = hass
         self._device = device
-        self._scan_interval = scan_interval
-        self._time_sync = time_sync
+        self._scan_interval = scan_interval        
         self._attr_supported_features = (
             AlarmControlPanelEntityFeature.ARM_HOME |
             AlarmControlPanelEntityFeature.ARM_AWAY |
@@ -138,41 +128,10 @@ class HDLBusproAlarmPanel(AlarmControlPanelEntity, RestoreEntity):
         if last_state is not None and last_state.state in STATE_MAP:
             self._device._status = STATE_MAP[last_state.state]
         
-        # Handle time synchronization based on device address, not entity
-        device_addr = self._device._device_address  # (subnet_id, device_id)
-        
-        # If this is the first entity for this device
-        if device_addr not in TIME_SYNC_DEVICES:
-            TIME_SYNC_DEVICES[device_addr] = self._time_sync
-            
-            # Only register if time_sync is True for this device
-            if self._time_sync:
-                self._register_time_sync()
-        else:
-            # If any entity for this device has time_sync=False, disable for all
-            if not self._time_sync:
-                TIME_SYNC_DEVICES[device_addr] = False
-                # No need to unregister existing callbacks, but we won't register new ones
-        
         await self._hass.data[DATA_BUSPRO].entity_initialized(self)
         await self.async_update()
     
-    def _register_time_sync(self):
-        """Register time synchronization for this security module."""
-        
-        async def sync_time(now=None):
-            """Synchronize time to HDL Buspro security module."""
-            try:
-                # Check if time_sync is still enabled for this device
-                if not TIME_SYNC_DEVICES.get(self._device._device_address, False):
-                    return
-                    
-                current_time = dt.now()
-                await self._device.set_system_time(current_time)
-            except Exception as e:
-                _LOGGER.error(f"Error synchronizing HDL Buspro time: {e}")
-                
-        async_track_time_change(self._hass, sync_time, minute=0, second=0)
+
 
     @callback
     def async_register_callbacks(self):

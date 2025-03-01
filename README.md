@@ -262,8 +262,7 @@ Configuration parameters:
     + **device ID** - device number (1-255)
     + **area** - area ID (1-8)
     + **name** _(string) (Required)_: The name of the security module area
-  + **scan_interval** _(int) (Optional)_: Polling interval in seconds (default: 0 = no polling)
-  + **time_sync** _(boolean) (Optional)_: Enable/disable automatic time synchronization with Home Assistant time (default: true). When enabled, the integration synchronizes the security module's internal clock with Home Assistant time at the start of every hour. **Note**: This setting applies to the entire security module device (subnet.device) not just a specific area. If you define multiple areas for the same device and set time_sync=false for any of them, time synchronization will be disabled for the entire device.
+  + **scan_interval** _(int) (Optional)_: Polling interval in seconds (default: 0 = no polling)  
 
 **Important**: You must configure your HDL security module to allow access from the Home Assistant integration device address (254.253). This permission should be set in HDL Buspro Setup Tool.
 
@@ -301,4 +300,30 @@ Domain: buspro
 Service: set_universal_switch
 Service Data: {"address": [1,74], "switch_number": 100, "status": 1}
 ```
-````
+#### Synchronizing time with modules:
+```yaml
+Domain: buspro
+Service: sync_time
+Service Data: {"address": [1,74]}
+```
+
+This service can be used to synchronize time with HDL Buspro modules that support time synchronization (like security modules or logic modules). To automatically sync time every hour, you can use automation:
+
+```yaml
+automation:
+  - alias: "Sync time with HDL modules"
+    trigger:
+      platform: time_pattern
+      # Triggers every hour
+      hours: "/1"      
+    action:
+      # Security module
+      - service: buspro.sync_time
+        data:
+          address: [1, 12]
+      # Logic module
+      - service: buspro.sync_time
+        data:
+          address: [1, 13]
+```
+

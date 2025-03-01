@@ -43,6 +43,7 @@ DEFAULT_SEND_MESSAGE_NAME = "BUSPRO MESSAGE"
 SERVICE_BUSPRO_SEND_MESSAGE = "send_message"
 SERVICE_BUSPRO_ACTIVATE_SCENE = "activate_scene"
 SERVICE_BUSPRO_UNIVERSAL_SWITCH = "set_universal_switch"
+SERVICE_BUSPRO_SYNC_TIME = "sync_time"
 
 SERVICE_BUSPRO_ATTR_OPERATE_CODE = "operate_code"
 SERVICE_BUSPRO_ATTR_ADDRESS = "address"
@@ -69,6 +70,11 @@ SERVICE_BUSPRO_UNIVERSAL_SWITCH_SCHEMA = vol.Schema({
     vol.Required(SERVICE_BUSPRO_ATTR_ADDRESS): vol.Any([cv.positive_int]),
     vol.Required(SERVICE_BUSPRO_ATTR_SWITCH_NUMBER): vol.Any(cv.positive_int),
     vol.Required(SERVICE_BUSPRO_ATTR_STATUS): vol.Any(cv.positive_int),
+})
+
+"""{ "address": [1,74] }"""
+SERVICE_BUSPRO_SYNC_TIME_SCHEMA = vol.Schema({
+    vol.Required(SERVICE_BUSPRO_ATTR_ADDRESS): vol.Any([cv.positive_int]),
 })
 
 CONFIG_SCHEMA = vol.Schema({
@@ -189,6 +195,26 @@ class BusproModule:
         else:
             await universal_switch.set_off()
 
+    async def service_sync_time(self, call):
+        """Service for synchronizing time with a device"""
+        from .pybuspro.devices.control import _ModifySystemDateandTime
+        import time
+        
+        device_address = call.data.get(SERVICE_BUSPRO_ATTR_ADDRESS)
+        
+        try:            
+            next_time = dt.now().replace(second=0, microsecond=0) + timedelta(seconds=1)
+            telegram = _ModifySystemDateandTime(self.hdl, device_address)
+            telegram.custom_datetime = next_time
+            
+            wait_seconds = 1 - (time.time() % 1)
+            await asyncio.sleep(wait_seconds)
+            
+            await telegram.send()
+            _LOGGER.debug(f"Time synced with device {device_address}, set to {next_time}")
+        except Exception as e:
+            _LOGGER.error(f"Error syncing time with device {device_address}: {e}")
+
     def register_services(self):
 
         """ activate_scene """
@@ -208,6 +234,12 @@ class BusproModule:
             DATA_BUSPRO, SERVICE_BUSPRO_UNIVERSAL_SWITCH,
             self.service_set_universal_switch,
             schema=SERVICE_BUSPRO_UNIVERSAL_SWITCH_SCHEMA)
+
+        """ sync_time """
+        self.hass.services.async_register(
+            DATA_BUSPRO, SERVICE_BUSPRO_SYNC_TIME,
+            self.service_sync_time,
+            schema=SERVICE_BUSPRO_SYNC_TIME_SCHEMA)
 
 
     def _register_time_broadcaster(self):

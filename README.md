@@ -248,8 +248,7 @@ alarm_control_panel:
         name: "Home Security"
         scan_interval: 60        
       - address: "1.89.2"
-        name: "Office Security"
-        time_sync: false
+        name: "Office Security"        
 ```
 
 The security module supports the following features:
@@ -307,23 +306,25 @@ Service: sync_time
 Service Data: {"address": [1,74]}
 ```
 
-This service can be used to synchronize time with HDL Buspro modules that support time synchronization (like security modules or logic modules). To automatically sync time every hour, you can use automation:
+This service can be used to synchronize time with HDL Buspro modules that support time synchronization (like security modules or logic modules). To automatically sync time every hour, add the following to your automations.yaml file:
 
 ```yaml
-automation:
-  - alias: "Sync time with HDL modules"
-    trigger:
-      platform: time_pattern
-      # Triggers every hour
-      hours: "/1"      
-    action:
-      # Security module
-      - service: buspro.sync_time
-        data:
-          address: [1, 12]
-      # Logic module
-      - service: buspro.sync_time
-        data:
-          address: [1, 13]
+- id: hdl_time_sync
+  alias: Sync time with HDL modules
+  description: Synchronize time with HDL modules (security and logic module)
+  triggers:
+  - hours: /1
+    trigger: time_pattern
+  actions:
+  - data:
+      address:
+      - 1
+      - 12
+    action: buspro.sync_time
+  - data:
+      address:
+      - 1
+      - 14
+    action: buspro.sync_time    
 ```
 

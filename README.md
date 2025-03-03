@@ -287,19 +287,19 @@ The security module offers comprehensive alarm management capabilities that inte
 ## Services
 
 #### Sending an arbitrary message:
-```
+```yaml
 Domain: buspro
 Service: send_message
 Service Data: {"address": [1,74], "operate_code": [4,78], "payload": [1,100,0,3]}
 ```
 #### Activating a scene:
-```
+```yaml
 Domain: buspro
 Service: activate_scene
 Service Data: {"address": [1,74], "scene_address": [3,5]}
 ```
 #### Setting an universal switch:
-```
+```yaml
 Domain: buspro
 Service: set_universal_switch
 Service Data: {"address": [1,74], "switch_number": 100, "status": 1}

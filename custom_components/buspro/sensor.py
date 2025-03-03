@@ -109,7 +109,8 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
             if len(address2) > 2:
                 channel_number = int(address2[2])
 
-        _LOGGER.debug(f"Adding sensor '{name}' with address {device_address}, sensor type '{sensor_type}'")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Adding sensor '{name}' with address {device_address}, sensor type '{sensor_type}'")
         sensor = Sensor(hdl, device_address, device_family=device_family, sensor_type=sensor_type, name=name, channel_number=channel_number)
         devices.append(BusproSensor(hass, sensor, sensor_type, scan_interval, offset, device_class))
 
@@ -135,7 +136,8 @@ class BusproSensor(Entity):
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
-        _LOGGER.debug("Added sensor '{}' scan interval {}".format(self._device.name, self.scan_interval))
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug("Added sensor '{}' scan interval {}".format(self._device.name, self.scan_interval))
         await self._hass.data[DATA_BUSPRO].entity_initialized(self)
 
     @callback

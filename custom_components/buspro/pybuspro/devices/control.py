@@ -89,13 +89,15 @@ class _Control:
         
         elif type(control) == _ReadSecurityModule:
             operate_code = OperateCode.ReadSecurityModule
-            _LOGGER.debug(f"ReadSecurityModule: {control.area}")
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"ReadSecurityModule: {control.area}")
             payload = [control.area]            
 
         elif type(control) == _ArmSecurityModule:
             operate_code = OperateCode.ArmSecurityModule
             payload = [control.area,control.arm_type]
-            _LOGGER.debug(f"ArmSecurityModule: {control.area} : {control.arm_type}")
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"ArmSecurityModule: {control.area} : {control.arm_type}")
 
         elif type(control) == _AlarmSecurityModule:
             operate_code = OperateCode.AlarmSecurityModule

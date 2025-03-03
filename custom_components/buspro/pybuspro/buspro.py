@@ -44,8 +44,9 @@ class Buspro:
         self._telegram_received_cbs = []
 
         self.gateway_address_send_receive = gateway_address_send_receive
-        _LOGGER.debug(f"Buspro logger level: {self.logger.getEffectiveLevel()}")
-        _LOGGER.debug(f"Buspro telegram logger level: {self.telegram_logger.getEffectiveLevel()}")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Buspro logger level: {self.logger.getEffectiveLevel()}")
+            _LOGGER.debug(f"Buspro telegram logger level: {self.telegram_logger.getEffectiveLevel()}")
         
 
     def __del__(self):
@@ -81,7 +82,8 @@ class Buspro:
         self.started = False
 
     def _callback_all_messages(self, telegram):
-        self.telegram_logger.debug(telegram)
+        if self.telegram_logger.isEnabledFor(logging.DEBUG):
+            self.telegram_logger.debug(telegram)
 
         if self.callback_all_messages is not None:
             self.callback_all_messages(telegram)

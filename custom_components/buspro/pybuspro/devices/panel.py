@@ -27,12 +27,14 @@ class Panel(Device):
         if telegram.operate_code in [OperateCode.ReadPanelStatusResponse,OperateCode.PanelControlResponse]:
             if telegram.payload[0] == PANEL_CONTROL_REMARK and self._channel_number == telegram.payload[1]:
                 self._is_on = telegram.payload[2] == 1
-                _LOGGER.debug(f"Panel status received for button {self._channel_number} at {self._device_address} is {self._is_on}")
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"Panel status received for button {self._channel_number} at {self._device_address} is {self._is_on}")
                 self._call_device_updated()
 
     async def press_button(self, button_number: int, value: bool = False):
         """Send panel control command for button press."""
-        _LOGGER.debug(f"Sending panel control for button {button_number} at {self._device_address} with value {value}")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Sending panel control for button {button_number} at {self._device_address} with value {value}")
         pc = _PanelControl(self._buspro, self._device_address)        
         pc.remark = PANEL_CONTROL_REMARK
         pc.key_number = button_number

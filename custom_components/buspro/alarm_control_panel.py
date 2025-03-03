@@ -159,37 +159,44 @@ class HDLBusproAlarmPanel(AlarmControlPanelEntity, RestoreEntity):
 
     async def async_alarm_disarm(self, code=None):
         """Send disarm command."""
-        _LOGGER.debug(f"Disarming alarm panel '{self._name}', sending DISARM command")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Disarming alarm panel '{self._name}', sending DISARM command")
         await self._device.set_status(SecurityStatus.DISARM)
 
     async def async_alarm_arm_home(self, code=None):
         """Send arm home command."""
-        _LOGGER.debug(f"Arming alarm panel '{self._name}' to HOME mode, sending DAY command")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Arming alarm panel '{self._name}' to HOME mode, sending DAY command")
         await self._device.set_status(SecurityStatus.DAY)
 
     async def async_alarm_arm_away(self, code=None):
         """Send arm away command."""
-        _LOGGER.debug(f"Arming alarm panel '{self._name}' to AWAY mode, sending AWAY command")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Arming alarm panel '{self._name}' to AWAY mode, sending AWAY command")
         await self._device.set_status(SecurityStatus.AWAY)        
 
     async def async_alarm_arm_night(self, code=None):
         """Send arm night command."""
-        _LOGGER.debug(f"Arming alarm panel '{self._name}' to NIGHT mode, sending NIGHT command")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Arming alarm panel '{self._name}' to NIGHT mode, sending NIGHT command")
         await self._device.set_status(SecurityStatus.NIGHT)
 
     async def async_alarm_arm_vacation(self, code=None):
         """Send arm vacation command."""
-        _LOGGER.debug(f"Arming alarm panel '{self._name}' to VACATION mode, sending VACATION command")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Arming alarm panel '{self._name}' to VACATION mode, sending VACATION command")
         await self._device.set_status(SecurityStatus.VACATION)
 
     async def async_alarm_arm_custom_bypass(self, code=None):
         """Send arm custom bypass command."""
-        _LOGGER.debug(f"Arming alarm panel '{self._name}' to CUSTOM BYPASS mode, sending NIGHT_WITH_GUEST command")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Arming alarm panel '{self._name}' to CUSTOM BYPASS mode, sending NIGHT_WITH_GUEST command")
         await self._device.set_status(SecurityStatus.NIGHT_WITH_GUEST)
 
     async def async_alarm_trigger(self, code=None):
         """Send alarm trigger command."""
-        _LOGGER.debug(f"Triggering alarm panel '{self._name}', sending AWAY command as trigger")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Triggering alarm panel '{self._name}', sending AWAY command as trigger")
         await self._device.set_status(SecurityStatus.AWAY)
 
     async def async_update(self):

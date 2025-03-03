@@ -41,7 +41,8 @@ class TelegramHelper:
     def build_telegram_from_udp_data(self, data, address):
         """Build telegram from UDP data."""
         if not data:
-            _LOGGER.debug("build_telegram_from_udp_data: no data")
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug("build_telegram_from_udp_data: no data")
             return None
 
         try:
@@ -75,7 +76,7 @@ class TelegramHelper:
 
             # Validate CRC
             if not self._check_crc(telegram):
-                _LOGGER.debug("CRC check failed")
+                _LOGGER.error("CRC check failed")
                 return None
 
             return telegram

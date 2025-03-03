@@ -118,7 +118,7 @@ async def async_setup(hass: HomeAssistant, config: dict):
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Setup from Config Entry (UI)."""    
-    if (not hass.is_running) and (DATA_BUSPRO in hass.data):
+    if (not hass.is_running) and (DATA_BUSPRO in hass.data) and _LOGGER.isEnabledFor(logging.DEBUG):
         _LOGGER.debug("Home Assistant is starting and Buspro module already exists, skipping configuration")
         return True
         
@@ -156,7 +156,8 @@ class BusproModule:
 
     async def entity_initialized(self, entity):
         async with self.entity_lock:
-            _LOGGER.debug(f"Entity initialized: {entity.entity_id} with scan interval {entity.scan_interval}")
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Entity initialized: {entity.entity_id} with scan interval {entity.scan_interval}")
             await self.scheduler.add_entity(entity)
 
 
@@ -209,7 +210,8 @@ class BusproModule:
             telegram.custom_datetime = dt.now()
             
             await telegram.send()
-            _LOGGER.debug(f"Time synced with device {device_address}, set to {telegram.custom_datetime}")
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Time synced with device {device_address}, set to {telegram.custom_datetime}")
         except Exception as e:
             _LOGGER.error(f"Error syncing time with device {device_address}: {e}")
 

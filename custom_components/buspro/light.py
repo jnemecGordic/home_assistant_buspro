@@ -67,7 +67,8 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         address2 = address.split('.')
         device_address = (int(address2[0]), int(address2[1]))
         channel_number = int(address2[2])
-        _LOGGER.debug("Adding light '{}' with address {} and channel number {}".format(name, device_address, channel_number))
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug("Adding light '{}' with address {} and channel number {}".format(name, device_address, channel_number))
 
         light = Light(hdl, device_address, channel_number, name)
         devices.append(BusproLight(hass, light, device_running_time, dimmable,scan_interval))
@@ -99,7 +100,8 @@ class BusproLight(LightEntity):
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
-        _LOGGER.debug("Added light '{}' scan interval {}".format(self._device.name, self.scan_interval))
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug("Added light '{}' scan interval {}".format(self._device.name, self.scan_interval))
         await self._hass.data[DATA_BUSPRO].entity_initialized(self)
 
     @callback

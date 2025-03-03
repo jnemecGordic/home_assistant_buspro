@@ -79,7 +79,8 @@ class BusproSwitch(SwitchEntity):
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
-        _LOGGER.debug("Added switch '{}' scan interval {}".format(self._device.name, self.scan_interval))
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug("Added switch '{}' scan interval {}".format(self._device.name, self.scan_interval))
         await self._hass.data[DATA_BUSPRO].entity_initialized(self)
 
 

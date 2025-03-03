@@ -77,7 +77,8 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         address2 = address.split('.')
         device_address = (int(address2[0]), int(address2[1]))
 
-        _LOGGER.debug(f"Adding binary sensor '{name}' with address {device_address}, sensor type '{sensor_type}'")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Adding binary sensor '{name}' with address {device_address}, sensor type '{sensor_type}'")
 
         
         if sensor_type == SensorType.DRY_CONTACT:
@@ -114,7 +115,8 @@ class BusproBinarySensor(BinarySensorEntity):
     async def async_added_to_hass(self):
         """Run when entity about to be added to hass."""
         await super().async_added_to_hass()
-        _LOGGER.debug(f"Added binary sensor '{self._device.name}' scan interval {self.scan_interval}")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Added binary sensor '{self._device.name}' scan interval {self.scan_interval}")
         await self._hass.data[DATA_BUSPRO].entity_initialized(self)
 
     @callback

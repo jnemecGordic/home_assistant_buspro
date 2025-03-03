@@ -63,7 +63,8 @@ class Scheduler:
         )
         self.entities_map[entity_id] = info
         heapq.heappush(target_heap, info)
-        _LOGGER.debug(f"Added entity {entity_id} to scheduler (scan_interval={seconds}s)")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Added entity {entity_id} to scheduler (scan_interval={seconds}s)")
 
     async def read_entities_periodically(self) -> None:
         """Register periodic reading of entities."""
@@ -99,7 +100,8 @@ class Scheduler:
 
     async def process_entity_reading(self, entity_id: str, info: EntityInfo, interval: int) -> None:
         """Process entity reading."""
-        _LOGGER.debug(f"Entity {entity_id} is due for reading")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Entity {entity_id} is due for reading")
         try:
             _LOGGER.info(f"Reading data from entity {entity_id}")
             if self.hass.states.get(entity_id):

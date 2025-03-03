@@ -93,7 +93,8 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         device_address = (int(address2[0]), int(address2[1]))
         scan_interval = device_config[CONF_SCAN_INTERVAL]
 
-        _LOGGER.debug("Adding climate '{}' with address {}".format(name, device_address))
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug("Adding climate '{}' with address {}".format(name, device_address))
 
         climate = Climate(hdl, device_address, name)
 
@@ -135,7 +136,8 @@ class BusproClimate(ClimateEntity):
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
-        _LOGGER.debug("Added climate '{}' scan interval {}".format(self._device.name, self.scan_interval))
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug("Added climate '{}' scan interval {}".format(self._device.name, self.scan_interval))
         await self._hass.data[DATA_BUSPRO].entity_initialized(self)
 
     async def async_turn_off(self) -> None:
@@ -156,7 +158,8 @@ class BusproClimate(ClimateEntity):
             self._is_on = device.is_on
             self._mode = device.mode
 
-            _LOGGER.debug(f"Device '{self._device.name}', " \
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Device '{self._device.name}', " \
                             f"IsOn: {self._is_on}, " \
                             f"Mode: {self._device.mode}, " \
                             f"TargetTemp: {self._device.target_temperature}")
@@ -238,7 +241,8 @@ class BusproClimate(ClimateEntity):
             preset_mode = PRESET_NONE
         mode = HA_PRESET_TO_HDL[preset_mode]
 
-        _LOGGER.debug(f"Setting preset mode to '{preset_mode}' ({mode}) for device '{self._device.name}'")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Setting preset mode to '{preset_mode}' ({mode}) for device '{self._device.name}'")
 
         climate_control = ControlFloorHeatingStatus()
         climate_control.mode = mode
@@ -315,7 +319,8 @@ class BusproClimate(ClimateEntity):
         preset = HDL_TO_HA_PRESET[self._mode]
         target_temperature = int(temperature)
 
-        _LOGGER.debug(f"Setting '{preset}' temperature to {target_temperature}")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Setting '{preset}' temperature to {target_temperature}")
         if preset == PRESET_NONE:
             climate_control.normal_temperature = target_temperature
         elif preset == PRESET_HOME:

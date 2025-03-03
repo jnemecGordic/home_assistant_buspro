@@ -60,7 +60,8 @@ class Sensor(Device):
                 self._sonic = telegram.payload[5]
                 self._dry_contact_1_status = telegram.payload[6]
                 self._dry_contact_2_status = telegram.payload[7]
-                _LOGGER.debug(f"12in1 sensor data received - temp:{self._current_temperature}, brightness:{self._brightness}, motion:{self._motion_sensor}, sonic:{self._sonic}, dc1:{self._dry_contact_1_status}, dc2:{self._dry_contact_2_status}")
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"12in1 sensor data received - temp:{self._current_temperature}, brightness:{self._brightness}, motion:{self._motion_sensor}, sonic:{self._sonic}, dc1:{self._dry_contact_1_status}, dc2:{self._dry_contact_2_status}")
                 self._call_device_updated()
             else:
                 _LOGGER.error(f"12in1 sensor data failed to receive - {telegram.payload}")
@@ -84,18 +85,21 @@ class Sensor(Device):
             self._motion_sensor = telegram.payload[7]
             self._dry_contact_1_status = telegram.payload[8]
             self._dry_contact_2_status = telegram.payload[9]
-            _LOGGER.debug(f"Sensors-in-one data received - temp:{self._current_temperature}, brightness:{self._brightness}, humidity:{self._current_humidity}, motion:{self._motion_sensor}, dc1:{self._dry_contact_1_status}, dc2:{self._dry_contact_2_status}")        
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Sensors-in-one data received - temp:{self._current_temperature}, brightness:{self._brightness}, humidity:{self._current_humidity}, motion:{self._motion_sensor}, dc1:{self._dry_contact_1_status}, dc2:{self._dry_contact_2_status}")        
             self._call_device_updated()
 
         elif telegram.operate_code == OperateCode.ReadFloorHeatingStatusResponse:
             self._current_temperature = telegram.payload[1]
-            _LOGGER.debug(f"Floor heating temperature received - temp:{self._current_temperature}")        
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Floor heating temperature received - temp:{self._current_temperature}")        
             self._call_device_updated()
 
         elif telegram.operate_code in [OperateCode.BroadcastTemperatureResponse,OperateCode.ReadTemperatureStatusResponse]:
             if self._channel_number is not None and self._channel_number == telegram.payload[0]:
                 self._current_temperature = telegram.payload[1]
-                _LOGGER.debug(f"Temperature received - temp:{self._current_temperature}")
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"Temperature received - temp:{self._current_temperature}")
                 self._call_device_updated()
 
         elif telegram.operate_code == OperateCode.ReadStatusOfUniversalSwitchResponse:
@@ -104,13 +108,15 @@ class Sensor(Device):
 
             if switch_number == self._universal_switch_number:
                 self._universal_switch_status = universal_switch_status
-                _LOGGER.debug(f"Universal switch status received for switch {switch_number} - status:{self._universal_switch_status}")            
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"Universal switch status received for switch {switch_number} - status:{self._universal_switch_status}")            
                 self._call_device_updated()
 
         elif telegram.operate_code == OperateCode.BroadcastStatusOfUniversalSwitch:
             if self._universal_switch_number is not None and self._universal_switch_number <= telegram.payload[0]:
                 self._universal_switch_status = telegram.payload[self._universal_switch_number]                
-                _LOGGER.debug(f"Universal switch broadcast received for switch {self._universal_switch_number} - status:{self._universal_switch_status}")
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"Universal switch broadcast received for switch {self._universal_switch_number} - status:{self._universal_switch_status}")
                 self._call_device_updated()
 
         elif telegram.operate_code == OperateCode.UniversalSwitchControlResponse:
@@ -119,61 +125,72 @@ class Sensor(Device):
 
             if switch_number == self._universal_switch_number:
                 self._universal_switch_status = universal_switch_status
-                _LOGGER.debug(f"Channel status received for channel {self._channel_number} - status:{self._channel_status}")            
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"Channel status received for channel {self._channel_number} - status:{self._channel_status}")            
                 self._call_device_updated()
 
         elif telegram.operate_code == OperateCode.ReadStatusOfChannelsResponse:
             if self._channel_number <= telegram.payload[0]:
                 self._channel_status = telegram.payload[self._channel_number]
-                _LOGGER.debug(f"Universal switch control response received for switch {switch_number} - status:{self._universal_switch_status}")            
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"Universal switch control response received for switch {switch_number} - status:{self._universal_switch_status}")            
                 self._call_device_updated()
 
         elif telegram.operate_code == OperateCode.SingleChannelControlResponse:
             if self._channel_number == telegram.payload[0]:
                 # if telegram.payload[1] == SuccessOrFailure.Success::
                 self._channel_status = telegram.payload[2]
-                _LOGGER.debug(f"Single channel control response received for channel {self._channel_number} - status:{self._channel_status}")            
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"Single channel control response received for channel {self._channel_number} - status:{self._channel_status}")            
                 self._call_device_updated()
 
         elif telegram.operate_code in [OperateCode.ReadDryContactStatusResponse, OperateCode.ReadDryContactBroadcastStatusResponse]:
             if self._switch_number == telegram.payload[1]:
                 self._switch_status = telegram.payload[2]
-                _LOGGER.debug(f"Dry contact status received for switch {self._switch_number} - status:{self._switch_status}")            
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"Dry contact status received for switch {self._switch_number} - status:{self._switch_status}")            
                 self._call_device_updated()
             
 
 
     async def read_sensor_status(self):
         if self._device_family is not None and self._device_family == DeviceFamily.DLP:
-            _LOGGER.debug(f"Reading DLP floor heating status for device {self._device_address}")
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Reading DLP floor heating status for device {self._device_address}")
             rfhs = _ReadFloorHeatingStatus(self._buspro, self._device_address)            
             await rfhs.send()
         elif self._device_family is not None and self._device_family == DeviceFamily.SENSORS_IN_ONE:
-            _LOGGER.debug(f"Reading sensors-in-one status for device {self._device_address}")
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Reading sensors-in-one status for device {self._device_address}")
             rsios = _ReadSensorsInOneStatus(self._buspro, self._device_address)            
             await rsios.send()
         elif self._device_family is not None and self._device_family == DeviceFamily.TWELVE_IN_ONE:
-            _LOGGER.debug(f"Reading 12-in-1 sensor status for device {self._device_address}")
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Reading 12-in-1 sensor status for device {self._device_address}")
             rsios = _Read12in1SensorStatus(self._buspro, self._device_address)
             await rsios.send()            
         elif self._sensor_type is not None and self._sensor_type == SensorType.DRY_CONTACT:
-            _LOGGER.debug(f"Reading dry contact status for device {self._device_address}, switch {self._switch_number}")
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Reading dry contact status for device {self._device_address}, switch {self._switch_number}")
             rdcs = _ReadDryContactStatus(self._buspro, self._device_address)            
             rdcs.switch_number = self._switch_number
             await rdcs.send()
         elif self._universal_switch_number is not None:
-            _LOGGER.debug(f"Reading universal switch status for device {self._device_address}, switch {self._universal_switch_number}")
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Reading universal switch status for device {self._device_address}, switch {self._universal_switch_number}")
             rsous = _ReadStatusOfUniversalSwitch(self._buspro, self._device_address)            
             rsous.switch_number = self._universal_switch_number
             await rsous.send()
         elif self._sensor_type is not None and self._sensor_type == SensorType.TEMPERATURE:
             channel = self._channel_number if self._channel_number is not None else 1
-            _LOGGER.debug(f"Reading temperature status for device {self._device_address}, channel {channel}")
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Reading temperature status for device {self._device_address}, channel {channel}")
             rts = _ReadTemperatureStatus(self._buspro, self._device_address)            
             rts.channel_number = channel
             await rts.send()
         elif self._sensor_type is not None and self._channel_number is not None:
-            _LOGGER.debug(f"Reading channel status for device {self._device_address}")
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Reading channel status for device {self._device_address}")
             rsoc = _ReadStatusOfChannels(self._buspro, self._device_address)            
             await rsoc.send()
 

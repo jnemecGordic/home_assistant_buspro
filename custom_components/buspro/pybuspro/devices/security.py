@@ -42,7 +42,8 @@ class Security(Device):
         self._device_address = device_address
 
         self.register_telegram_received_cb(self._telegram_received_cb)
-        _LOGGER.debug(f"Initialized security device {device_address} for area {area_id}")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Initialized security device {device_address} for area {area_id}")
         self._buspro.loop.create_task(self.read_security_status())
         
         
@@ -71,7 +72,8 @@ class Security(Device):
             _LOGGER.error(f"Invalid security status: {status}")
             return
 
-        _LOGGER.debug(f"Setting security module {self._device_address} area {self._area_id} "
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Setting security module {self._device_address} area {self._area_id} "
                      f"status to {status.name} (value: {status.value})")
 
         control = _ArmSecurityModule(self._buspro, self._device_address)
@@ -98,7 +100,8 @@ class Security(Device):
         if dt is None:
             dt = datetime.datetime.now()
             
-        _LOGGER.debug(f"Setting system time on {self._device_address} to {dt}")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Setting system time on {self._device_address} to {dt}")
         
         time_sync = _ModifySystemDateandTime(self._buspro, self._device_address)
         time_sync.custom_datetime = dt

@@ -77,7 +77,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             name,
             invert
         ))
-        _LOGGER.debug(f"Added cover '{name}' (invert={invert})")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Added cover '{name}' (invert={invert})")
 
     async_add_entities(devices)
     return True
@@ -104,7 +105,8 @@ class HDLBusproCover(CoverEntity):
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
-        _LOGGER.debug("Added cover '{}' scan interval {}".format(self._device.name, self.scan_interval))
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug("Added cover '{}' scan interval {}".format(self._device.name, self.scan_interval))
         await self._hass.data[DATA_BUSPRO].entity_initialized(self)
 
     @property

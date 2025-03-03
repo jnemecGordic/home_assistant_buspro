@@ -35,7 +35,7 @@ light:
     + **name** _(string) (Required)_: The name of the device
     + **running_time** _(int) (Optional)_: The running time in seconds for the device. If omitted, the default running time for all devices is used.
     + **dimmable** _(boolean) (Optional)_: Is the device dimmable? Default is True. 
-    + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (background updates with lower priority).
+    + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (updates handled by system's background polling). Set a specific interval only for entities where you need guaranteed update frequency, as frequent polling of many entities may impact system performance.
 
 #### Switch platform
 
@@ -53,7 +53,7 @@ switch:
 + **devices** _(Required)_: A list of devices to set up
   + **X.X.X** _(Required)_: The address of the device on the format `<subnet ID>.<device ID>.<channel number>`
     + **name** _(string) (Required)_: The name of the device
-    + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (background updates with lower priority).
+    + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (updates handled by system's background polling). Set a specific interval only for entities where you need guaranteed update frequency, as frequent polling of many entities may impact system performance.
 
 It is also possible to use the switch to control buttons on control panels (switches) on the wall.
 For this, you need to specify the `device` parameter as `panel`.
@@ -143,7 +143,7 @@ binary_sensor:
     + Available device families: 
       + 12in1
       + sensors_in_one (devices like 7 in 1)
-  + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (background updates with lower priority).
+  + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (updates handled by system's background polling). Set a specific interval only for entities where you need guaranteed update frequency, as frequent polling of many entities may impact system performance.
 
 #### Climate platform
 
@@ -167,7 +167,7 @@ climate:
   + **address** _(string) (Required)_: The address of the sensor device on the format `<subnet ID>.<device ID>`
   + **name** _(string) (Required)_: The name of the device
   + **preset_modes** _(list) (Optional)_: List of supported preset modes. Preset mode selection is disabled if not set. Possible values are shown in table below. Corresponding modes must be enabled in HDL (Floor Heating > Working Settings > Mode).
-  + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (background updates with lower priority).
+  + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (updates handled by system's background polling). Set a specific interval only for entities where you need guaranteed update frequency, as frequent polling of many entities may impact system performance.
     
 | HA preset mode | HDL mode |
 |:--------------:|:--------:|
@@ -265,7 +265,7 @@ Configuration parameters:
     + **device ID** - device number (1-255)
     + **area** - area ID (1-8)
     + **name** _(string) (Required)_: The name of the security module area
-    + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (background updates with lower priority). Set only for entities where frequent state updates are critical, as setting low values for many entities may impact system performance.
+    + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (updates handled by system's background polling). Set a specific interval only for entities where you need guaranteed update frequency, as frequent polling of many entities may impact system performance.
 
 
 **Important**: You must configure your HDL security module to allow access from the Home Assistant integration device address (254.253). This permission should be set in HDL Buspro Setup Tool.

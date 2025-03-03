@@ -124,13 +124,6 @@ class TelegramHelper:
         send_buf[25+len(payload):] = pack(">H", crc)
         return send_buf
 
-    def _calculate_crc(self, length_of_data_package, send_buf):
-        crc_buf_length = length_of_data_package - 2
-        crc_buf = send_buf[-crc_buf_length:]
-        crc_buf_as_bytes = bytes(crc_buf)
-        crc = self.crc16func(crc_buf_as_bytes)
-
-        return pack(">H", crc)
 
     def _calculate_crc_from_telegram(self, telegram):
         length_of_data_package = 11 + len(telegram.payload)

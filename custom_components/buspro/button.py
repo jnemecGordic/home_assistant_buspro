@@ -6,7 +6,6 @@ from homeassistant.components.button import ButtonEntity, PLATFORM_SCHEMA
 from homeassistant.const import CONF_NAME, CONF_DEVICES
 import homeassistant.helpers.config_validation as cv
 
-from custom_components.buspro import DATA_BUSPRO
 from custom_components.buspro.helpers import wait_for_buspro
 from custom_components.buspro.pybuspro.devices.panel import Panel
 from .pybuspro.devices import Button
@@ -47,9 +46,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the Buspro button devices."""
-    if not await wait_for_buspro(hass, DATA_BUSPRO):
+    if not await wait_for_buspro(hass):
         return False
-    hdl = hass.data[DATA_BUSPRO].hdl
     devices = []
 
     for address, device_config in config[CONF_DEVICES].items():
@@ -64,7 +62,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             _LOGGER.debug(f"Adding button '{name}' with address {device_address}, button number {button_number}, value {value}")
         
         
-        panel = Panel(hdl, device_address, name)
+        panel = Panel(hass, device_address, name)
         button = Button(panel, button_number, name)
         devices.append(BusproButton(hass, button, value))
 

@@ -46,10 +46,9 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
     """Set up Buspro light devices."""
 
-    if not await wait_for_buspro(hass, DATA_BUSPRO):
+    if not await wait_for_buspro(hass):
         return False
-
-    hdl = hass.data[DATA_BUSPRO].hdl
+    
     devices = []
     platform_running_time = int(config["running_time"])
 
@@ -70,7 +69,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug("Adding light '{}' with address {} and channel number {}".format(name, device_address, channel_number))
 
-        light = Light(hdl, device_address, channel_number, name)
+        light = Light(hass, device_address, channel_number, name)
         devices.append(BusproLight(hass, light, device_running_time, dimmable,scan_interval))
 
     async_add_entites(devices)

@@ -23,11 +23,11 @@ from ..helpers.enums import *
 _LOGGER = logging.getLogger(__name__)
 
 class Sensor(Device):
-    def __init__(self, buspro, device_address, device_family=None, sensor_type=None, universal_switch_number=None, channel_number=None, device=None,
+    def __init__(self, hass, device_address, device_family=None, sensor_type=None, universal_switch_number=None, channel_number=None, device=None,
                  switch_number=None, name="", delay_read_current_state_seconds=0):
-        super().__init__(buspro, device_address, name)
+        super().__init__(hass, device_address, name)
 
-        self._buspro = buspro
+        self._hass = hass
         self._device_address = device_address
         self._sensor_type = SensorType(sensor_type) if sensor_type is not None else None
         self._device_family = DeviceFamily(device_family) if device_family is not None else None
@@ -157,41 +157,41 @@ class Sensor(Device):
         if self._device_family is not None and self._device_family == DeviceFamily.DLP:
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Reading DLP floor heating status for device {self._device_address}")
-            rfhs = _ReadFloorHeatingStatus(self._buspro, self._device_address)            
+            rfhs = _ReadFloorHeatingStatus(self._hass, self._device_address)            
             await rfhs.send()
         elif self._device_family is not None and self._device_family == DeviceFamily.SENSORS_IN_ONE:
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Reading sensors-in-one status for device {self._device_address}")
-            rsios = _ReadSensorsInOneStatus(self._buspro, self._device_address)            
+            rsios = _ReadSensorsInOneStatus(self._hass, self._device_address)            
             await rsios.send()
         elif self._device_family is not None and self._device_family == DeviceFamily.TWELVE_IN_ONE:
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Reading 12-in-1 sensor status for device {self._device_address}")
-            rsios = _Read12in1SensorStatus(self._buspro, self._device_address)
+            rsios = _Read12in1SensorStatus(self._hass, self._device_address)
             await rsios.send()            
         elif self._sensor_type is not None and self._sensor_type == SensorType.DRY_CONTACT:
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Reading dry contact status for device {self._device_address}, switch {self._switch_number}")
-            rdcs = _ReadDryContactStatus(self._buspro, self._device_address)            
+            rdcs = _ReadDryContactStatus(self._hass, self._device_address)            
             rdcs.switch_number = self._switch_number
             await rdcs.send()
         elif self._universal_switch_number is not None:
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Reading universal switch status for device {self._device_address}, switch {self._universal_switch_number}")
-            rsous = _ReadStatusOfUniversalSwitch(self._buspro, self._device_address)            
+            rsous = _ReadStatusOfUniversalSwitch(self._hass, self._device_address)            
             rsous.switch_number = self._universal_switch_number
             await rsous.send()
         elif self._sensor_type is not None and self._sensor_type == SensorType.TEMPERATURE:
             channel = self._channel_number if self._channel_number is not None else 1
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Reading temperature status for device {self._device_address}, channel {channel}")
-            rts = _ReadTemperatureStatus(self._buspro, self._device_address)            
+            rts = _ReadTemperatureStatus(self._hass, self._device_address)            
             rts.channel_number = channel
             await rts.send()
         elif self._sensor_type is not None and self._channel_number is not None:
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Reading channel status for device {self._device_address}")
-            rsoc = _ReadStatusOfChannels(self._buspro, self._device_address)            
+            rsoc = _ReadStatusOfChannels(self._hass, self._device_address)            
             await rsoc.send()
 
 
@@ -261,4 +261,4 @@ class Sensor(Device):
                 await asyncio.sleep(5)
             await self.read_sensor_status()
 
-        asyncio.ensure_future(read_current_status_of_sensor(), loop=self._buspro.loop)
+        asyncio.ensure_future(read_current_status_of_sensor(), loop=self._hass.loop)

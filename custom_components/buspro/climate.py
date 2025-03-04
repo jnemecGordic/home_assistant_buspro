@@ -79,9 +79,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 # noinspection PyUnusedLocal
 async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
     """Set up Buspro switch devices."""
-    if not await wait_for_buspro(hass, DATA_BUSPRO):
-        return False
-    hdl = hass.data[DATA_BUSPRO].hdl
+    if not await wait_for_buspro(hass):
+        return False    
     devices = []
 
     for device_config in config[CONF_DEVICES]:
@@ -96,7 +95,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug("Adding climate '{}' with address {}".format(name, device_address))
 
-        climate = Climate(hdl, device_address, name)
+        climate = Climate(hass, device_address, name)
 
         relay_sensor = None
         relay_address = device_config[CONF_RELAY_ADDRESS]
@@ -104,7 +103,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
             relay_address2 = relay_address.split('.')
             relay_device_address = (int(relay_address2[0]), int(relay_address2[1]))
             relay_channel_number = int(relay_address2[2])
-            relay_sensor = Sensor(hdl, relay_device_address, channel_number=relay_channel_number)
+            relay_sensor = Sensor(hass, relay_device_address, channel_number=relay_channel_number)
 
         devices.append(BusproClimate(hass, climate, preset_modes, relay_sensor, scan_interval))
 

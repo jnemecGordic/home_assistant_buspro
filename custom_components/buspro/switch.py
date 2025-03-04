@@ -39,10 +39,9 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 # noinspection PyUnusedLocal
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up Buspro switch devices."""
-    if not await wait_for_buspro(hass, DATA_BUSPRO):
-        return False
-        
-    hdl = hass.data[DATA_BUSPRO].hdl
+    if not await wait_for_buspro(hass):
+        return False        
+    
     devices = []
 
     for address, device_config in config[CONF_DEVICES].items():
@@ -56,11 +55,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         if device_family_str == DeviceFamily.PANEL.value:
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Adding panel switch '{name}' with address {device_address} and channel {channel_number}")
-            device = Panel(hdl, device_address, channel_number, name)
+            device = Panel(hass, device_address, channel_number, name)
         else:
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Adding switch '{name}' with address {device_address} and channel {channel_number}")
-            device = Switch(hdl, device_address, channel_number, name)
+            device = Switch(hass, device_address, channel_number, name)
 
         devices.append(BusproSwitch(hass, device, scan_interval))
 

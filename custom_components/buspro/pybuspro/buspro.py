@@ -11,29 +11,12 @@ _LOGGER = logging.getLogger(__name__)
 # subnet_id, device_id, channel = device_address
 
 
-class StateUpdater:
-    def __init__(self, buspro, sleep=10):
-        self.buspro = buspro
-        self.run_forever = True
-        self.run_task = None
-        self.sleep = sleep
-
-    async def start(self):
-        self.run_task = self.buspro.loop.create_task(self.run())
-
-    async def run(self):
-        await asyncio.sleep(0)
-        self.buspro.logger.info("Starting StateUpdater with {} seconds interval".format(self.sleep))
-
-        while True:
-            await asyncio.sleep(self.sleep)
-            await self.buspro.sync()
-
 
 class Buspro:
 
-    def __init__(self, gateway_address_send_receive, loop_=None):
+    def __init__(self, hass, gateway_address_send_receive, loop_=None):
         self.loop = loop_ or asyncio.get_event_loop()
+        self._hass = hass
         self.state_updater = None
         self.started = False
         self.network_interface = None
@@ -58,14 +41,10 @@ class Buspro:
                 self.logger.warning("Could not close loop, reason: {}".format(exp))
 
     # noinspection PyUnusedLocal
-    async def start(self, state_updater=False):  # , daemon_mode=False):
-        self.network_interface = NetworkInterface(self, self.gateway_address_send_receive)
+    async def start(self):  # , daemon_mode=False):
+        self.network_interface = NetworkInterface(self._hass, self.gateway_address_send_receive)
         self.network_interface.register_callback(self._callback_all_messages)
         await self.network_interface.start()
-
-        if state_updater:
-            self.state_updater = StateUpdater(self)
-            await self.state_updater.start()
 
         '''
         if daemon_mode:
@@ -120,8 +99,3 @@ class Buspro:
             'device_address': device_address,
             'postfix': postfix})
 
-    @staticmethod
-    async def sync():
-        # await self.callback("LOG: Sync() triggered from StateUpdater")
-        # print("LOG: Sync() triggered from StateUpdater")
-        raise NotImplementedError

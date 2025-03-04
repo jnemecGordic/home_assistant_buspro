@@ -7,6 +7,7 @@ https://home-assistant.io/...
 import asyncio
 import logging
 from datetime import timedelta
+import time
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -25,11 +26,11 @@ from .pybuspro.buspro import Buspro
 from custom_components.buspro.scheduler import Scheduler
 from .helpers import signal_buspro_ready
 from homeassistant.util import dt
-from .const import CONF_TIME_BROADCAST
+from .const import CONF_TIME_BROADCAST, DATA_BUSPRO
 
 _LOGGER = logging.getLogger(__name__)
 
-DATA_BUSPRO = "buspro"
+
 DEPENDENCIES = []
 DEFAULT_BROADCAST_ADDRESS = "192.168.10.255"
 DEFAULT_BROADCAST_PORT = 6000
@@ -89,24 +90,35 @@ CONFIG_SCHEMA = vol.Schema({
 
 async def _setup_buspro(hass: HomeAssistant, config_data: dict) -> bool:
     """Common initialization for both YAML and Config Entry."""
+    scheduler = None
+    
     if DATA_BUSPRO in hass.data:
         old_module = hass.data[DATA_BUSPRO]
-        await old_module.stop(None)
+        scheduler = old_module.scheduler
+        time_broadcast = config_data.get(CONF_TIME_BROADCAST, True)
+        
+        
+        host = config_data.get(CONF_BROADCAST_ADDRESS)
+        port = config_data.get(CONF_BROADCAST_PORT)
+        await old_module.restart(host, port, time_broadcast)
+        
+        return True
 
     host = config_data.get(CONF_BROADCAST_ADDRESS, DEFAULT_BROADCAST_ADDRESS)
     port = config_data.get(CONF_BROADCAST_PORT, DEFAULT_BROADCAST_PORT)
     time_broadcast = config_data.get(CONF_TIME_BROADCAST, True)
 
-    module = BusproModule(hass, host, port, time_broadcast)
+    module = BusproModule(hass, host, port, time_broadcast, existing_scheduler=scheduler)
     await module.start()
     module.register_services()
     
     hass.data[DATA_BUSPRO] = module
+    
+    if scheduler is None:
+        async def start_scheduler(_):
+            await module.start_scheduler()
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, start_scheduler)
 
-    async def start_scheduler(_):
-        await module.start_scheduler()
-        
-    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, start_scheduler)
     signal_buspro_ready()
     return True
 
@@ -126,33 +138,62 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
 
 class BusproModule:
-    def __init__(self, hass, host, port, time_broadcast=True):
+    def __init__(self, hass, host, port, time_broadcast=True, existing_scheduler=None):
         self.hass = hass
         self.connected = False        
         self.gateway_address_send_receive = ((host, port), ('', port))
-        self.hdl = Buspro(self.gateway_address_send_receive, self.hass.loop)        
-        self.scheduler = Scheduler(hass)
+        self.hdl = Buspro(hass, self.gateway_address_send_receive, self.hass.loop)        
+        self.scheduler = existing_scheduler or Scheduler(hass)
         self.entity_lock = asyncio.Lock()
         self._time_sync_registered = False
         self._time_broadcast_enabled = time_broadcast
+        self._time_broadcaster_unsub = None
 
     async def start(self):
-        await self.hdl.start(state_updater=False)
+        await self.hdl.start()
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self.stop)
         self.connected = True
-        # Register time broadcaster only if enabled
-        if self._time_broadcast_enabled and not self._time_sync_registered:
-            self._register_time_broadcaster()
-            self._time_sync_registered = True
+        await self._handle_time_broadcaster()
+
+    async def _handle_time_broadcaster(self):
+        """Handle time broadcaster based on configuration."""
+        if self._time_broadcast_enabled:
+            if not self._time_sync_registered:
+                self._register_time_broadcaster()
+                self._time_sync_registered = True
+        elif self._time_sync_registered:
+            self._unregister_time_broadcaster()
+            self._time_sync_registered = False
 
     async def start_scheduler(self):
         """Start the scheduler."""
         await self.scheduler.read_entities_periodically()
 
-    async def stop(self, event):
-        """Stop the module."""        
-        await self.scheduler.stop()
+    async def stop(self):
+        """Stop HDL part and time broadcaster."""        
+        if self._time_sync_registered:
+            await self._unregister_time_broadcaster()
+            self._time_sync_registered = False
+        
         await self.hdl.stop()
+        self.connected = False
+
+    async def restart(self, host=None, port=None, time_broadcast=None):
+        """Restart HDL connection with optional new configuration."""
+        if host is not None or port is not None:
+            old_host, old_port = self.gateway_address_send_receive[0]
+            new_host = host or old_host
+            new_port = port or old_port
+            self.gateway_address_send_receive = ((new_host, new_port), ('', new_port))
+
+        if time_broadcast is not None:
+            self._time_broadcast_enabled = time_broadcast
+        
+        await self.stop()
+        await asyncio.sleep(0.1)
+        
+        self.hdl = Buspro(self.hass, self.gateway_address_send_receive, self.hass.loop)
+        await self.start()
 
     async def entity_initialized(self, entity):
         async with self.entity_lock:
@@ -162,33 +203,30 @@ class BusproModule:
 
 
     async def service_activate_scene(self, call):
-        """Service for activatign a __scene"""
-        # noinspection PyUnresolvedReferences
+        """Service for activation a __scene"""
         from .pybuspro.devices.scene import Scene
 
         attr_address = call.data.get(SERVICE_BUSPRO_ATTR_ADDRESS)
         attr_scene_address = call.data.get(SERVICE_BUSPRO_ATTR_SCENE_ADDRESS)
-        scene = Scene(self.hdl, attr_address, attr_scene_address, DEFAULT_SCENE_NAME)
+        scene = Scene(self.hass, attr_address, attr_scene_address, DEFAULT_SCENE_NAME)
         await scene.run()
 
     async def service_send_message(self, call):
         """Service for send an arbitrary message"""
-        # noinspection PyUnresolvedReferences
         from .pybuspro.devices.generic import Generic
 
         attr_address = call.data.get(SERVICE_BUSPRO_ATTR_ADDRESS)
         attr_payload = call.data.get(SERVICE_BUSPRO_ATTR_PAYLOAD)
         attr_operate_code = call.data.get(SERVICE_BUSPRO_ATTR_OPERATE_CODE)
-        generic = Generic(self.hdl, attr_address, attr_payload, attr_operate_code, DEFAULT_SEND_MESSAGE_NAME)
+        generic = Generic(self.hass, attr_address, attr_payload, attr_operate_code, DEFAULT_SEND_MESSAGE_NAME)
         await generic.run()
 
     async def service_set_universal_switch(self, call):
-        # noinspection PyUnresolvedReferences
         from .pybuspro.devices.universal_switch import UniversalSwitch
 
         attr_address = call.data.get(SERVICE_BUSPRO_ATTR_ADDRESS)
         attr_switch_number = call.data.get(SERVICE_BUSPRO_ATTR_SWITCH_NUMBER)
-        universal_switch = UniversalSwitch(self.hdl, attr_address, attr_switch_number)
+        universal_switch = UniversalSwitch(self.hass, attr_address, attr_switch_number)
 
         status = call.data.get(SERVICE_BUSPRO_ATTR_STATUS)
         if status == 1:
@@ -204,7 +242,7 @@ class BusproModule:
         device_address = call.data.get(SERVICE_BUSPRO_ATTR_ADDRESS)
         
         try:            
-            telegram = _ModifySystemDateandTime(self.hdl, device_address)
+            telegram = _ModifySystemDateandTime(self.hass, device_address)
             wait_seconds = 1 - (time.time() % 1)
             await asyncio.sleep(wait_seconds)            
             telegram.custom_datetime = dt.now()
@@ -246,35 +284,22 @@ class BusproModule:
         """Register broadcast time synchronization for displays."""
         from homeassistant.helpers.event import async_track_time_change
         from .pybuspro.devices.control import _BroadcastSystemDateandTimeEveryMinute
-        import asyncio
-        import time
         
-        async def broadcast_time_precise(now=None):
+        async def broadcast_time(_now=None):
             """Broadcast time at the start of each minute."""
-            try:                
-                next_time = dt.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
-                telegram = _BroadcastSystemDateandTimeEveryMinute(self.hdl, (255, 255))
-                telegram.custom_datetime = next_time                
-                
-                wait_seconds = 60 - (time.time() % 60)
-                await asyncio.sleep(wait_seconds)
-                await telegram.send()                
-                
+            try:
+                telegram = _BroadcastSystemDateandTimeEveryMinute(self.hass, (255, 255))
+                telegram.custom_datetime = dt.now().replace(second=0, microsecond=0) + timedelta(minutes=1)
+                await telegram.send()
             except Exception as e:
                 _LOGGER.error(f"Time broadcast error: {e}")
-        
-        
-        async_track_time_change(self.hass, broadcast_time_precise, second=59)
-        self.hass.async_create_task(broadcast_time_precise())
+                
+        self._time_broadcaster_unsub = async_track_time_change(
+            self.hass, broadcast_time, second=59
+        )
 
-
-    '''
-    def telegram_received_cb(self, telegram):
-        #     """Call invoked after a KNX telegram was received."""
-        #     self.hass.bus.fire('knx_event', {
-        #         'address': str(telegram.group_address),
-        #         'data': telegram.payload.value
-        #     })
-        # _LOGGER.info(f"Callback: '{telegram}'")
-        return False
-    '''
+    async def _unregister_time_broadcaster(self):
+        """Unregister broadcast time synchronization."""
+        if self._time_broadcaster_unsub:
+            self._time_broadcaster_unsub()
+            self._time_broadcaster_unsub = None

@@ -20,7 +20,7 @@ from homeassistant.const import (
 import homeassistant.helpers.config_validation as cv
 from homeassistant.core import callback
 from homeassistant.helpers.restore_state import RestoreEntity
-from custom_components.buspro import DATA_BUSPRO
+from custom_components.buspro.const import DATA_BUSPRO
 from custom_components.buspro.helpers import wait_for_buspro
 from .pybuspro.devices.security import Security, SecurityStatus
 
@@ -76,10 +76,9 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the HDL Buspro alarm control panel devices."""
-    if not await wait_for_buspro(hass, DATA_BUSPRO):
+    if not await wait_for_buspro(hass):
         return False
-
-    hdl = hass.data[DATA_BUSPRO].hdl
+    
     devices = []
 
     for device_config in config[CONF_DEVICES]:
@@ -91,7 +90,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         scan_interval = device_config.get(CONF_SCAN_INTERVAL, 0)        
         subnet_id, device_id, area_id = map(int, match.groups())
         
-        device = Security(hdl, (subnet_id, device_id), area_id, name)
+        device = Security(hass, (subnet_id, device_id), area_id, name)
         panel = HDLBusproAlarmPanel(hass, device, name, scan_interval)
         devices.append(panel)
 

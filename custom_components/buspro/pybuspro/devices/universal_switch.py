@@ -6,11 +6,11 @@ from ..helpers.enums import *
 
 
 class UniversalSwitch(Device):
-    def __init__(self, buspro, device_address, switch_number, name="", delay_read_current_state_seconds=0):
-        super().__init__(buspro, device_address, name)
+    def __init__(self, hass, device_address, switch_number, name="", delay_read_current_state_seconds=0):
+        super().__init__(hass, device_address, name)
         # device_address = (subnet_id, device_id, switch_number)
 
-        self._buspro = buspro
+        self._hass = hass
         self._device_address = device_address
         self._switch_number = switch_number
         self._switch_status = SwitchStatusOnOff.OFF
@@ -54,7 +54,7 @@ class UniversalSwitch(Device):
     async def _set(self, switch_status):
         self._switch_status = switch_status
 
-        us = _UniversalSwitch(self._buspro, self._device_address)        
+        us = _UniversalSwitch(self._hass, self._device_address)        
         us.switch_number = self._switch_number
         us.switch_status = self._switch_status
         await us.send()
@@ -65,8 +65,8 @@ class UniversalSwitch(Device):
             if run_from_init:
                 await asyncio.sleep(1)
 
-            read_status_of_universal_switch = _ReadStatusOfUniversalSwitch(self._buspro, self._device_address)            
+            read_status_of_universal_switch = _ReadStatusOfUniversalSwitch(self._hass, self._device_address)            
             read_status_of_universal_switch.switch_number = self._switch_number
             await read_status_of_universal_switch.send()
 
-        asyncio.ensure_future(read_current_state_of_universal_switch(), loop=self._buspro.loop)
+        asyncio.ensure_future(read_current_state_of_universal_switch(), loop=self._hass.loop)

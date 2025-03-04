@@ -10,9 +10,9 @@ PANEL_CONTROL_REMARK = 18
 class Panel(Device):
     """HDL panel device for handling button presses and other panel-related operations."""
     
-    def __init__(self, buspro, device_address, channel_number: int, name=""):
-        super().__init__(buspro, device_address, name)
-        self._buspro = buspro
+    def __init__(self, hass, device_address, channel_number: int, name=""):
+        super().__init__(hass, device_address, name)
+        self._hass = hass
         self._device_address = device_address
         self._name = name
         self._channel_number = channel_number
@@ -35,7 +35,7 @@ class Panel(Device):
         """Send panel control command for button press."""
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug(f"Sending panel control for button {button_number} at {self._device_address} with value {value}")
-        pc = _PanelControl(self._buspro, self._device_address)        
+        pc = _PanelControl(self._hass, self._device_address)        
         pc.remark = PANEL_CONTROL_REMARK
         pc.key_number = button_number
         pc.key_status = 1 if value else 0
@@ -55,7 +55,7 @@ class Panel(Device):
 
     async def read_status(self):
         """Read channel status."""
-        rps = _ReadPanelStatus(self._buspro, self._device_address)        
+        rps = _ReadPanelStatus(self._hass, self._device_address)        
         rps.key_number = self._channel_number
         rps.remark = PANEL_CONTROL_REMARK
         await rps.send()

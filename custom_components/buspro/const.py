@@ -1,4 +1,4 @@
-DOMAIN = "buspro"
+DATA_BUSPRO = "buspro"
 CONF_HOST = "host"
 CONF_PORT = "port"
 HUMIDITY = "humidity"

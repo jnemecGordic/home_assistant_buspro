@@ -15,8 +15,7 @@ from homeassistant.const import (
 from homeassistant.components.cover import CoverEntity, CoverEntityFeature, CoverDeviceClass
 import homeassistant.helpers.config_validation as cv
 
-from custom_components.buspro import DATA_BUSPRO
-from custom_components.buspro.const import CONF_INVERT
+from custom_components.buspro.const import CONF_INVERT, DATA_BUSPRO
 from custom_components.buspro.helpers import wait_for_buspro
 from .pybuspro.devices.cover import Cover
 
@@ -54,10 +53,11 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the HDL Buspro cover devices."""
-    if not await wait_for_buspro(hass, DATA_BUSPRO):
+    devices = []
+
+    if not await wait_for_buspro(hass):
         return False
 
-    hdl = hass.data[DATA_BUSPRO].hdl
     devices = []
 
     for device_config in config[CONF_DEVICES]:
@@ -69,7 +69,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         invert = device_config[CONF_INVERT]
         subnet_id, device_id, channel = map(int, match.groups())
         
-        device = Cover(hdl, (subnet_id, device_id), channel)
+        device = Cover(hass, (subnet_id, device_id), channel)
         
         devices.append(HDLBusproCover(
             hass,

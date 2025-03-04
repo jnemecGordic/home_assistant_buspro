@@ -26,20 +26,19 @@ class CoverStatus(IntEnum):
 class Cover(Device):
     """HDL Buspro cover device."""
     
-    def __init__(self, buspro, device_address: Tuple[int, int], channel: int, name=""):
-        super().__init__(buspro, device_address, name)
+    def __init__(self, hass, device_address: Tuple[int, int], channel: int, name=""):
+        super().__init__(hass, device_address, name)
         """Initialize cover device.
         
         Args:
-            buspro: HDL Buspro instance
+            hass: Home Assistant instance
             device_address: Tuple of (subnet_id, device_id)
             channel: Channel number (1-2)
         """
-        self._buspro = buspro
-        self._device_address = device_address
         self._channel = channel        
         self._position = 0
         self._status = CoverStatus.STOP
+        self._hass = hass
         self.register_telegram_received_cb(self._telegram_received_cb)
 
     def _telegram_received_cb(self, telegram):
@@ -51,13 +50,13 @@ class Cover(Device):
 
     async def read_cover_status(self):
         """Read current status from device."""
-        csc = _CurtainReadStatus(self._buspro, self._device_address)        
+        csc = _CurtainReadStatus(self._hass, self._device_address)        
         csc.channel = self._channel
         await csc.send()
 
     async def _send_command(self, command: CoverCommand):
         """Send command to cover device."""
-        csc = _CurtainSwitchControl(self._buspro, self._device_address)
+        csc = _CurtainSwitchControl(self._hass, self._device_address)
         csc.channel = self._channel
         csc.state = CoverStatus.STOP
         

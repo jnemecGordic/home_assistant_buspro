@@ -5,7 +5,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 
-from .const import DOMAIN, CONF_TIME_BROADCAST
+from .const import CONF_TIME_BROADCAST, DATA_BUSPRO
 
 from homeassistant.const import (
     CONF_BROADCAST_ADDRESS,
@@ -39,7 +39,7 @@ def _get_form_schema(defaults=None):
         ): bool
     })
 
-class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class ConfigFlow(config_entries.ConfigFlow, domain=DATA_BUSPRO):
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
@@ -69,16 +69,29 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 class BusproOptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self, config_entry):
-        self.config_entry = config_entry
+        """Initialize options flow."""
+        super().__init__()
+        self._config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
+        """Handle options flow."""
         if user_input is not None:
             self.hass.config_entries.async_update_entry(
-                self.config_entry, data=user_input
+                self._config_entry,
+                data=user_input
             )
+            
+            if DATA_BUSPRO in self.hass.data:
+                module = self.hass.data[DATA_BUSPRO]
+                await module.restart(
+                    host=user_input.get(CONF_BROADCAST_ADDRESS),
+                    port=user_input.get(CONF_BROADCAST_PORT),
+                    time_broadcast=user_input.get(CONF_TIME_BROADCAST)
+                )
+            
             return self.async_create_entry(title="", data=user_input)
 
         return self.async_show_form(
             step_id="init",
-            data_schema=_get_form_schema(self.config_entry.data)
+            data_schema=_get_form_schema(self._config_entry.data)
         )

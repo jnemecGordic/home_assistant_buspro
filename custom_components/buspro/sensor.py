@@ -5,17 +5,12 @@ For more details about this platform, please refer to the documentation at
 https://home-assistant.io/components/...
 """
 
-import asyncio
 import logging
 
-from custom_components.buspro.helpers import wait_for_buspro
-from .pybuspro.helpers.enums import DeviceFamily, validate_device_family
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import (
     PLATFORM_SCHEMA,
-    SensorEntity,
-    SensorDeviceClass,
     DEVICE_CLASSES_SCHEMA,
 )
 from homeassistant.const import (
@@ -31,8 +26,10 @@ from homeassistant.const import (
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 
-from ..buspro import DATA_BUSPRO
+from custom_components.buspro.helpers import wait_for_buspro
 from .pybuspro.devices.sensor import SensorType, DeviceFamily
+from .pybuspro.helpers.enums import validate_device_family
+from ..buspro import DATA_BUSPRO
 
 DEFAULT_CONF_UNIT_OF_MEASUREMENT = ""
 DEFAULT_CONF_DEVICE = "None"
@@ -72,10 +69,9 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
     # noinspection PyUnresolvedReferences
     from .pybuspro.devices import Sensor
 
-    if not await wait_for_buspro(hass, DATA_BUSPRO):
-        return False
+    if not await wait_for_buspro(hass):
+        return False    
     
-    hdl = hass.data[DATA_BUSPRO].hdl
     devices = []
 
     for device_config in config[CONF_DEVICES]:
@@ -111,7 +107,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug(f"Adding sensor '{name}' with address {device_address}, sensor type '{sensor_type}'")
-        sensor = Sensor(hdl, device_address, device_family=device_family, sensor_type=sensor_type, name=name, channel_number=channel_number)
+        sensor = Sensor(hass, device_address, device_family=device_family, sensor_type=sensor_type, name=name, channel_number=channel_number)
         devices.append(BusproSensor(hass, sensor, sensor_type, scan_interval, offset, device_class))
 
 

@@ -27,7 +27,7 @@ class SecurityStatus(IntEnum):
 class Security(Device):
     """HDL Buspro security/alarm device."""
     
-    def __init__(self, buspro, device_address: Tuple[int, int], area_id: int = 1, name=""):
+    def __init__(self, hass, device_address: Tuple[int, int], area_id: int = 1, name=""):
         """Initialize security device.
         
         Args:
@@ -36,15 +36,16 @@ class Security(Device):
             area_id: Area ID (1-8)
             name: Device name
         """
-        super().__init__(buspro, device_address, name)
+        super().__init__(hass, device_address, name)
         self._status = None
         self._area_id = area_id        
         self._device_address = device_address
+        self._hass = hass
 
         self.register_telegram_received_cb(self._telegram_received_cb)
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug(f"Initialized security device {device_address} for area {area_id}")
-        self._buspro.loop.create_task(self.read_security_status())
+        self._hass.loop.create_task(self.read_security_status())
         
         
 
@@ -60,7 +61,7 @@ class Security(Device):
 
     async def read_security_status(self):
         """Read current security status from device."""
-        rsm = _ReadSecurityModule(self._buspro, self._device_address)
+        rsm = _ReadSecurityModule(self._hass, self._device_address)
         rsm.area = self._area_id
         await rsm.send()
 
@@ -76,7 +77,7 @@ class Security(Device):
             _LOGGER.debug(f"Setting security module {self._device_address} area {self._area_id} "
                      f"status to {status.name} (value: {status.value})")
 
-        control = _ArmSecurityModule(self._buspro, self._device_address)
+        control = _ArmSecurityModule(self._hass, self._device_address)
         control.area = self._area_id
         if status != SecurityStatus.DISARM:
             control.arm_type = SecurityStatus.DISARM.value
@@ -103,7 +104,7 @@ class Security(Device):
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug(f"Setting system time on {self._device_address} to {dt}")
         
-        time_sync = _ModifySystemDateandTime(self._buspro, self._device_address)
+        time_sync = _ModifySystemDateandTime(self._hass, self._device_address)
         time_sync.custom_datetime = dt
         await time_sync.send()
 

@@ -5,11 +5,11 @@ from ..helpers.generics import Generics
 
 
 class Switch(Device):
-    def __init__(self, buspro, device_address, channel_number, name="", delay_read_current_state_seconds=0):
-        super().__init__(buspro, device_address, name)
+    def __init__(self, hass, device_address, channel_number, name="", delay_read_current_state_seconds=0):
+        super().__init__(hass, device_address, name)
         # device_address = (subnet_id, device_id, channel_number)
 
-        self._buspro = buspro
+        self._hass = hass
         self._device_address = device_address
         self._channel_number = channel_number
         self._brightness = 0
@@ -40,7 +40,7 @@ class Switch(Device):
         await self._set(intensity, 0)
 
     async def read_status(self):
-        rsos = _ReadStatusOfSwitch(self._buspro, self._device_address)        
+        rsos = _ReadStatusOfSwitch(self._hass, self._device_address)        
         await rsos.send()
 
     @property
@@ -60,7 +60,7 @@ class Switch(Device):
         generics = Generics()
         (minutes, seconds) = generics.calculate_minutes_seconds(running_time_seconds)
 
-        scc = _SingleChannelControl(self._buspro, self._device_address)        
+        scc = _SingleChannelControl(self._hass, self._device_address)        
         scc.channel_number = self._channel_number
         scc.channel_level = intensity
         scc.running_time_minutes = minutes

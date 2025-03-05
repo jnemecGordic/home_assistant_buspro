@@ -5,7 +5,7 @@
 The HDL Buspro integration allows you to control your HDL Buspro system from Home Assistant.
 
 ## Installation
-Under HACS -> Integrations, add custom repository "https://github.com/jnemecGordic/home_assistant_buspro/" with Category "Integration". Select the integration named "HDL Buspro" and download it.
+Under HACS -> Integrations, add custom repository "https://github.com/MyMight/home_assistant_buspro/" with Category "Integration". Select the integration named "HDL Buspro" and download it.
 
 Restart Home Assistant.
 
@@ -95,9 +95,9 @@ sensor:
 + **devices** _(Required)_: A list of devices to set up
   + **address** _(string) (Required)_: The address of the sensor device on the format `<subnet ID>.<device ID>`
   + **name** _(string) (Required)_: The name of the device
-  + **type** _(string) (Required)_: Type of sensor to monitor. 
-    + Available sensors: 
-      + temperature     
+  + **type** _(string) (Required)_: Type of sensor to monitor.
+    + Available sensors:
+      + temperature
       + humidity
       + illuminance
   + **unit_of_measurement** _(string) (Optional)_: text to be displayed as unit of measurement
@@ -107,7 +107,7 @@ sensor:
       + 12in1
       + sensors_in_one (devices like 8 in 1 and 7 in 1)
       + panel
-      + dlp    
+      + dlp
   
 
 #### Binary sensor platform
@@ -132,15 +132,15 @@ binary_sensor:
   + **address** _(string) (Required)_: The address of the sensor device on the format `<subnet ID>.<device ID>`. If 
   'type' = 'universal_switch' universal switch number must be appended to the address. 
   + **name** _(string) (Required)_: The name of the device
-  + **type** _(string) (Required)_: Type of sensor to monitor. 
-    + Available sensors: 
-      + motion 
-      + dry_contact_1 
+  + **type** _(string) (Required)_: Type of sensor to monitor.
+    + Available sensors:
+      + motion
+      + dry_contact_1
       + dry_contact_2
       + universal_switch
       + single_channel
   + **device** _(string) (Optional)_: The type of HDL sensor device
-    + Available device families: 
+    + Available device families:
       + 12in1
       + sensors_in_one (devices like 7 in 1)
   + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (updates handled by system's background polling). Set a specific interval only for entities where you need guaranteed update frequency, as frequent polling of many entities may impact system performance.

@@ -136,6 +136,19 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         
     return await _setup_buspro(hass, config_entry.data)
 
+async def async_reload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> None:
+    """Reload Buspro integration when user clicks reload in frontend."""
+    _LOGGER.debug("Reloading Buspro integration")
+    
+    if DATA_BUSPRO in hass.data:
+        module = hass.data[DATA_BUSPRO]
+        await module.restart(
+            host=config_entry.data.get(CONF_BROADCAST_ADDRESS),
+            port=config_entry.data.get(CONF_BROADCAST_PORT),
+            time_broadcast=config_entry.data.get(CONF_TIME_BROADCAST)
+        )
+        return True
+
 
 class BusproModule:
     def __init__(self, hass, host, port, time_broadcast=True, existing_scheduler=None):

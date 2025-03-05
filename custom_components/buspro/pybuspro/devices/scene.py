@@ -4,11 +4,11 @@ from ..devices.control import _SceneControl
 
 
 class Scene(Device):
-    def __init__(self, buspro, device_address, scene_address, name=""):
-        super().__init__(buspro, scene_address, name)
+    def __init__(self, hass, device_address, scene_address, name=""):
+        super().__init__(hass, scene_address, name)
         # device_address = (subnet_id, device_id, area_number, scene_number)
 
-        self._buspro = buspro
+        self._hass = hass
         self._device_address = device_address
         self._scene_address = scene_address
         # self.register_telegram_received_cb(self._telegram_received_cb)
@@ -32,7 +32,6 @@ class Scene(Device):
     """
 
     async def run(self):
-        scene_control = _SceneControl(self._buspro)
-        scene_control.subnet_id, scene_control.device_id = self._device_address
+        scene_control = _SceneControl(self._hass, self._device_address)        
         scene_control.area_number, scene_control.scene_number = self._scene_address
         await scene_control.send()

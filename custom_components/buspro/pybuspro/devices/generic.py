@@ -33,8 +33,7 @@ class Generic(Device):
         #     self._call_read_current_status_of_channels()
 
     async def run(self):
-        generic_control = _GenericControl(self._buspro)
-        generic_control.subnet_id, generic_control.device_id = self._device_address
+        generic_control = _GenericControl(self._buspro,self._device_address)        
         generic_control.payload = self._payload
         generic_control.operate_code = self._operate_code
         await generic_control.send()

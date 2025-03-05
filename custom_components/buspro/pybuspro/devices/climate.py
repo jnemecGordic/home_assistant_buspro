@@ -18,11 +18,12 @@ class ControlFloorHeatingStatus:
 
 
 class Climate(Device):
-    def __init__(self, buspro, device_address, name=""):
-        super().__init__(buspro, device_address, name)
+    def __init__(self, hass, device_address, name=""):
+        super().__init__(hass, device_address, name)
 
-        self._buspro = buspro
+        
         self._device_address = device_address
+        self._hass = hass
 
         self._temperature_type = None   # Celsius/Fahrenheit
         self._status = None             # On/Off
@@ -68,8 +69,7 @@ class Climate(Device):
             self._call_device_updated()
 
     async def read_heating_status(self):
-        rfhs = _ReadFloorHeatingStatus(self._buspro)
-        rfhs.subnet_id, rfhs.device_id = self._device_address
+        rfhs = _ReadFloorHeatingStatus(self._hass,self._device_address)        
         await rfhs.send()
 
     def _telegram_received_control_heating_status_cb(self, telegram, floor_heating_status):
@@ -109,8 +109,7 @@ class Climate(Device):
                 if floor_heating_status.away_temperature is not None:
                     away_temperature = floor_heating_status.away_temperature
 
-            cfhs_ = _ControlFloorHeatingStatus(self._buspro)
-            cfhs_.subnet_id, cfhs_.device_id = self._device_address
+            cfhs_ = _ControlFloorHeatingStatus(self._hass,self._device_address)            
             cfhs_.temperature_type = temperature_type
             cfhs_.status = status
             cfhs_.mode = mode
@@ -122,12 +121,11 @@ class Climate(Device):
             async def send_control_floor_heating_status(cfhs__):
                 await cfhs__.send()
 
-            asyncio.ensure_future(send_control_floor_heating_status(cfhs_), loop=self._buspro.loop)
+            asyncio.ensure_future(send_control_floor_heating_status(cfhs_), loop=self._hass.loop)
 
     async def control_heating_status(self, floor_heating_status: ControlFloorHeatingStatus):
         self.register_telegram_received_cb(self._telegram_received_control_heating_status_cb, floor_heating_status)
-        rfhs = _ReadFloorHeatingStatus(self._buspro)
-        rfhs.subnet_id, rfhs.device_id = self._device_address
+        rfhs = _ReadFloorHeatingStatus(self._hass,self._device_address)        
         await rfhs.send()
 
     def _call_read_current_heating_status(self, run_from_init=False):
@@ -136,11 +134,10 @@ class Climate(Device):
             if run_from_init:
                 await asyncio.sleep(5)
 
-            rfhs = _ReadFloorHeatingStatus(self._buspro)
-            rfhs.subnet_id, rfhs.device_id = self._device_address
+            rfhs = _ReadFloorHeatingStatus(self._hass,self._device_address)            
             await rfhs.send()
 
-        asyncio.ensure_future(read_current_heating_status(), loop=self._buspro.loop)
+        asyncio.ensure_future(read_current_heating_status(), loop=self._hass.loop)
 
     @property
     def unit_of_measurement(self):

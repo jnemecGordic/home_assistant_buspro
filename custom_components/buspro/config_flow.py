@@ -1,53 +1,97 @@
-import aiohttp
-import asyncio
-import json
-
-from collections import namedtuple
-from typing import Dict, List, Tuple
-import requests
-import re
-
 import logging
-import voluptuous as vol
 
-from homeassistant import config_entries, exceptions
-from homeassistant.core import HomeAssistant
-from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
+from homeassistant import config_entries
+from homeassistant.core import callback
 
-from .const import (
-    DOMAIN,
-    CONF_HOST,
-    CONF_PORT
+from .const import CONF_TIME_BROADCAST, DATA_BUSPRO
+
+from homeassistant.const import (
+    CONF_BROADCAST_ADDRESS,
+    CONF_BROADCAST_PORT,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
-class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+# Konstanty pro formulář
+FORM_DESCRIPTION_PLACEHOLDERS = {
+    "time_broadcast_description": "When enabled, Home Assistant will act as a time source for HDL Buspro devices by broadcasting current time every minute"
+}
 
+def _get_form_schema(defaults=None):
+    """Get schema with default values."""
+    if defaults is None:
+        defaults = {}
+    
+    return vol.Schema({
+        vol.Required(
+            CONF_BROADCAST_ADDRESS, 
+            default=defaults.get(CONF_BROADCAST_ADDRESS, "192.168.10.255")
+        ): cv.string,
+        vol.Required(
+            CONF_BROADCAST_PORT, 
+            default=defaults.get(CONF_BROADCAST_PORT, 6000)
+        ): cv.port,
+        vol.Optional(
+            CONF_TIME_BROADCAST, 
+            default=defaults.get(CONF_TIME_BROADCAST, True)
+        ): bool
+    })
+
+class ConfigFlow(config_entries.ConfigFlow, domain=DATA_BUSPRO):
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
-    
+
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
         errors = {}
-        
+
         if user_input is not None:
-            try:
+            try:                
+                if CONF_TIME_BROADCAST not in user_input:
+                    user_input[CONF_TIME_BROADCAST] = True
                 return self.async_create_entry(title="Buspro", data=user_input)
-                    
             except Exception:
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
 
         return self.async_show_form(
             step_id="user",
-
-            data_schema=vol.Schema({
-            	#vol.Required(CONF_HOST, default=host): cv.string,
-            	#vol.Required(CONF_PORT, default=port): cv.port
-            	vol.Required(CONF_HOST): cv.string,
-            	vol.Required(CONF_PORT): cv.port
-            }),
+            data_schema=_get_form_schema(),
             errors=errors
+        )
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        return BusproOptionsFlowHandler(config_entry)
+
+class BusproOptionsFlowHandler(config_entries.OptionsFlow):
+    def __init__(self, config_entry):
+        """Initialize options flow."""
+        super().__init__()
+        self._config_entry = config_entry
+
+    async def async_step_init(self, user_input=None):
+        """Handle options flow."""
+        if user_input is not None:
+            self.hass.config_entries.async_update_entry(
+                self._config_entry,
+                data=user_input
+            )
+            
+            if DATA_BUSPRO in self.hass.data:
+                module = self.hass.data[DATA_BUSPRO]
+                await module.restart(
+                    host=user_input.get(CONF_BROADCAST_ADDRESS),
+                    port=user_input.get(CONF_BROADCAST_PORT),
+                    time_broadcast=user_input.get(CONF_TIME_BROADCAST)
+                )
+            
+            return self.async_create_entry(title="", data=user_input)
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=_get_form_schema(self._config_entry.data)
         )

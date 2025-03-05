@@ -1,3 +1,6 @@
-DOMAIN = "buspro"
+DATA_BUSPRO = "buspro"
 CONF_HOST = "host"
 CONF_PORT = "port"
+HUMIDITY = "humidity"
+CONF_INVERT = "invert" 
+CONF_TIME_BROADCAST = "time_broadcast"

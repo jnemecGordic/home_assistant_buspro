@@ -5,6 +5,7 @@ For more details about this platform, please refer to the documentation at
 https://home-assistant.io/components/...
 """
 
+import asyncio
 import logging
 from typing import Optional, List
 
@@ -22,14 +23,17 @@ from homeassistant.const import (
     CONF_DEVICES,
     CONF_ADDRESS,
     UnitOfTemperature,
-    ATTR_TEMPERATURE,
+    ATTR_TEMPERATURE, CONF_SCAN_INTERVAL,
 )
 from homeassistant.core import callback
+
+from custom_components.buspro.helpers import wait_for_buspro
+from custom_components.buspro.pybuspro.devices.sensor import Sensor
 
 # from homeassistant.helpers.entity import Entity
 from ..buspro import DATA_BUSPRO
 # noinspection PyUnresolvedReferences
-from .pybuspro.devices.climate import ControlFloorHeatingStatus
+from .pybuspro.devices.climate import Climate, ControlFloorHeatingStatus
 # noinspection PyUnresolvedReferences
 from .pybuspro.helpers.enums import OnOffStatus
 
@@ -66,6 +70,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
                     cv.ensure_list, [vol.In(HA_PRESET_TO_HDL)]
                 ),
                 vol.Optional(CONF_RELAY_ADDRESS, default=''): cv.string,
+                vol.Optional(CONF_SCAN_INTERVAL, default=0): cv.positive_int,
             })
         ])
 })
@@ -74,11 +79,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 # noinspection PyUnusedLocal
 async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
     """Set up Buspro switch devices."""
-    # noinspection PyUnresolvedReferences
-    from .pybuspro.devices import Climate
-    from .pybuspro.devices import Sensor
-
-    hdl = hass.data[DATA_BUSPRO].hdl
+    if not await wait_for_buspro(hass):
+        return False    
     devices = []
 
     for device_config in config[CONF_DEVICES]:
@@ -88,10 +90,12 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 
         address2 = address.split('.')
         device_address = (int(address2[0]), int(address2[1]))
+        scan_interval = device_config[CONF_SCAN_INTERVAL]
 
-        _LOGGER.debug("Adding climate '{}' with address {}".format(name, device_address))
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug("Adding climate '{}' with address {}".format(name, device_address))
 
-        climate = Climate(hdl, device_address, name)
+        climate = Climate(hass, device_address, name)
 
         relay_sensor = None
         relay_address = device_config[CONF_RELAY_ADDRESS]
@@ -99,9 +103,9 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
             relay_address2 = relay_address.split('.')
             relay_device_address = (int(relay_address2[0]), int(relay_address2[1]))
             relay_channel_number = int(relay_address2[2])
-            relay_sensor = Sensor(hdl, relay_device_address, channel_number=relay_channel_number)
+            relay_sensor = Sensor(hass, relay_device_address, channel_number=relay_channel_number)
 
-        devices.append(BusproClimate(hass, climate, preset_modes, relay_sensor))
+        devices.append(BusproClimate(hass, climate, preset_modes, relay_sensor, scan_interval))
 
     async_add_entites(devices)
 
@@ -110,9 +114,10 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 class BusproClimate(ClimateEntity):
     """Representation of a Buspro switch."""
 
-    def __init__(self, hass, device, preset_modes, relay_sensor):
+    def __init__(self, hass, device, preset_modes, relay_sensor, scan_interval):
         self._hass = hass
         self._device = device
+        self._scan_interval = scan_interval
         self._target_temperature = self._device.target_temperature
         self._is_on = self._device.is_on
         self._preset_modes = preset_modes
@@ -127,6 +132,12 @@ class BusproClimate(ClimateEntity):
         self._attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
 
         self.async_register_callbacks()
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug("Added climate '{}' scan interval {}".format(self._device.name, self.scan_interval))
+        await self._hass.data[DATA_BUSPRO].entity_initialized(self)
 
     async def async_turn_off(self) -> None:
         await self.async_set_hvac_mode(HVACMode.OFF)
@@ -146,13 +157,14 @@ class BusproClimate(ClimateEntity):
             self._is_on = device.is_on
             self._mode = device.mode
 
-            _LOGGER.debug(f"Device '{self._device.name}', " \
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Device '{self._device.name}', " \
                             f"IsOn: {self._is_on}, " \
                             f"Mode: {self._device.mode}, " \
                             f"TargetTemp: {self._device.target_temperature}")
-
-            if self._hass is not None:
-                self.async_write_ha_state()
+            
+            self.async_write_ha_state()
+            await self._hass.data[DATA_BUSPRO].scheduler.device_updated(self.entity_id)
 
         async def after_relay_sensor_update_callback(device):
             """Call after device was updated."""
@@ -168,6 +180,10 @@ class BusproClimate(ClimateEntity):
     def should_poll(self):
         """No polling needed within Buspro."""
         return False
+
+    async def async_update(self):
+        """Default async_update method that does nothing."""
+        pass
 
     @property
     def name(self):
@@ -224,7 +240,8 @@ class BusproClimate(ClimateEntity):
             preset_mode = PRESET_NONE
         mode = HA_PRESET_TO_HDL[preset_mode]
 
-        _LOGGER.debug(f"Setting preset mode to '{preset_mode}' ({mode}) for device '{self._device.name}'")
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Setting preset mode to '{preset_mode}' ({mode}) for device '{self._device.name}'")
 
         climate_control = ControlFloorHeatingStatus()
         climate_control.mode = mode
@@ -282,8 +299,14 @@ class BusproClimate(ClimateEntity):
 
     @property
     def unique_id(self):
-        """Return the unique id."""
-        return self._device.device_identifier
+        """Return unique ID for this climate entity."""
+        subnet, device = self._device._device_address
+        return f"{subnet}-{device}-climate"
+
+    @property
+    def scan_interval(self):
+        """Return the scan interval of the climate."""
+        return self._scan_interval
 
     async def async_set_temperature(self, **kwargs):
         """Set new target temperature."""
@@ -295,8 +318,8 @@ class BusproClimate(ClimateEntity):
         preset = HDL_TO_HA_PRESET[self._mode]
         target_temperature = int(temperature)
 
-        _LOGGER.debug(f"Setting '{preset}' temperature to {target_temperature}")
-
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(f"Setting '{preset}' temperature to {target_temperature}")
         if preset == PRESET_NONE:
             climate_control.normal_temperature = target_temperature
         elif preset == PRESET_HOME:

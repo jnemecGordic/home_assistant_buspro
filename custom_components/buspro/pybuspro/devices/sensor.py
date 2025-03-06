@@ -95,9 +95,23 @@ class Sensor(Device):
                 _LOGGER.debug(f"Floor heating temperature received - temp:{self._current_temperature}")        
             self._call_device_updated()
 
-        elif telegram.operate_code in [OperateCode.BroadcastTemperatureResponse,OperateCode.ReadTemperatureStatusResponse]:
+        elif telegram.operate_code in [OperateCode.BroadcastTemperatureResponse, OperateCode.ReadTemperatureStatusResponse]:
             if self._channel_number is not None and self._channel_number == telegram.payload[0]:
                 self._current_temperature = telegram.payload[1]
+                
+                if len(telegram.payload) >= 6:
+                    if not all(b == 0 for b in telegram.payload[2:6]):
+                        try:
+                            float_bytes = bytes(telegram.payload[2:6])
+                            float_temp = struct.unpack("<f", float_bytes)[0]
+                            
+                            if -100 < float_temp < 100:
+                                self._current_temperature = float_temp
+                                if _LOGGER.isEnabledFor(logging.DEBUG):
+                                    _LOGGER.debug(f"Temperature received as float: {float_temp}")
+                        except (struct.error, ValueError, IndexError) as e:
+                            pass
+                
                 if _LOGGER.isEnabledFor(logging.DEBUG):
                     _LOGGER.debug(f"Temperature received - temp:{self._current_temperature}")
                 self._call_device_updated()
@@ -127,21 +141,6 @@ class Sensor(Device):
                 self._universal_switch_status = universal_switch_status
                 if _LOGGER.isEnabledFor(logging.DEBUG):
                     _LOGGER.debug(f"Channel status received for channel {self._channel_number} - status:{self._channel_status}")            
-                self._call_device_updated()
-
-        elif telegram.operate_code == OperateCode.ReadStatusOfChannelsResponse:
-            if self._channel_number <= telegram.payload[0]:
-                self._channel_status = telegram.payload[self._channel_number]
-                if _LOGGER.isEnabledFor(logging.DEBUG):
-                    _LOGGER.debug(f"Universal switch control response received for switch {switch_number} - status:{self._universal_switch_status}")            
-                self._call_device_updated()
-
-        elif telegram.operate_code == OperateCode.SingleChannelControlResponse:
-            if self._channel_number == telegram.payload[0]:
-                # if telegram.payload[1] == SuccessOrFailure.Success::
-                self._channel_status = telegram.payload[2]
-                if _LOGGER.isEnabledFor(logging.DEBUG):
-                    _LOGGER.debug(f"Single channel control response received for channel {self._channel_number} - status:{self._channel_status}")            
                 self._call_device_updated()
 
         elif telegram.operate_code in [OperateCode.ReadDryContactStatusResponse, OperateCode.ReadDryContactBroadcastStatusResponse]:

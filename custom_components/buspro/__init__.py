@@ -182,7 +182,7 @@ class BusproModule:
         """Start the scheduler."""
         await self.scheduler.read_entities_periodically()
 
-    async def stop(self):
+    async def stop(self, event=None):
         """Stop HDL part and time broadcaster."""        
         if self._time_sync_registered:
             await self._unregister_time_broadcaster()

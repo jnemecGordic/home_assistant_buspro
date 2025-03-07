@@ -102,12 +102,12 @@ sensor:
       + illuminance
   + **unit_of_measurement** _(string) (Optional)_: text to be displayed as unit of measurement
   + **device** _(string) (Optional)_: The type of HDL sensor device
-  + **offset** _(int) (Optional)_: Offset to be added to the sensor value. Some devices, like HDL-MSOUT.4W, require an offset of -20.
     + Available device families:
       + 12in1
       + sensors_in_one (devices like 8 in 1 and 7 in 1)
       + panel
       + dlp
+  + **offset** _(int) (Optional)_: Offset to be added to the sensor value. Some devices, like HDL-MSOUT.4W, require an offset of -20.
   
 
 #### Binary sensor platform

@@ -14,9 +14,14 @@ class SensorType(Enum):
     DRY_CONTACT_2 = "dry_contact_2"
     UNIVERSAL_SWITCH = "universal_switch"
     SINGLE_CHANNEL = "single_channel"
+    CURRENT = "current"
+    VOLTAGE = "voltage"
+    POWER = "power"
+    POWER_FACTOR = "power_factor"
+    ENERGY = "energy"
 
 from .control import _Read12in1SensorStatus, _ReadStatusOfUniversalSwitch, _ReadStatusOfChannels, _ReadFloorHeatingStatus, \
-    _ReadDryContactStatus, _ReadSensorsInOneStatus, _ReadTemperatureStatus
+    _ReadDryContactStatus, _ReadSensorsInOneStatus, _ReadTemperatureStatus, _ReadVoltageStatus
 from .device import Device
 from ..helpers.enums import *
 
@@ -46,6 +51,13 @@ class Sensor(Device):
         self._universal_switch_status = OnOffStatus.OFF
         self._channel_status = 0
         self._switch_status = 0
+
+        # Add new properties for power measurement
+        self._current = None
+        self._voltage = None
+        self._power = None
+        self._power_factor = None
+        self._energy = None
 
         self.register_telegram_received_cb(self._telegram_received_cb)
         self._call_read_current_status_of_sensor(run_from_init=True)
@@ -154,7 +166,14 @@ class Sensor(Device):
                     msg_type = "broadcast" if telegram.operate_code == OperateCode.ReadDryContactBroadcastStatusResponse else "data"
                     _LOGGER.debug(f"Dry contact {msg_type} received for switch {self._switch_number} - status:{self._switch_status}")            
                 self._call_device_updated()            
-
+        
+        elif telegram.operate_code == OperateCode.ReadVoltageResponse:
+            if self._channel_number is not None and 1 <= self._channel_number <= 3:
+                offset = (self._channel_number - 1) * 4
+                self._voltage = round((telegram.payload[offset] * 10.0) + (telegram.payload[offset + 1] ) + (telegram.payload[offset + 2] / 10.0) + (telegram.payload[offset + 3] / 100.0),2)                
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"Voltage received for device {self._device_address} channel {self._channel_number} - voltage:{self._voltage}")
+                self._call_device_updated()
 
     async def read_sensor_status(self):
         if self._device_family is not None and self._device_family == DeviceFamily.DLP:
@@ -191,6 +210,12 @@ class Sensor(Device):
             rts = _ReadTemperatureStatus(self._hass, self._device_address)            
             rts.channel_number = channel
             await rts.send()
+        elif self._sensor_type is not None and self._sensor_type == SensorType.VOLTAGE and self._channel_number is not None:            
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Reading voltage status for device {self._device_address}, channel {self._channel_number}")
+            rvs = _ReadVoltageStatus(self._hass, self._device_address)                        
+            rvs.channel_number = self._channel_number
+            await rvs.send()
         elif self._sensor_type is not None and self._channel_number is not None:
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Reading channel status for device {self._device_address}")

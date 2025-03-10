@@ -12,7 +12,8 @@ import voluptuous as vol
 from homeassistant.components.sensor import (
     PLATFORM_SCHEMA,
     DEVICE_CLASSES_SCHEMA,
-    SensorEntity
+    SensorDeviceClass,
+    SensorStateClass,
 )
 from homeassistant.const import (
     CONF_NAME,
@@ -23,6 +24,11 @@ from homeassistant.const import (
     CONF_DEVICE,
     CONF_SCAN_INTERVAL,
     CONF_DEVICE_CLASS,
+    UnitOfElectricCurrent,
+    UnitOfElectricPotential,
+    UnitOfPower,
+    UnitOfEnergy,
+    PERCENTAGE,
 )
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
@@ -43,7 +49,12 @@ _LOGGER = logging.getLogger(__name__)
 SENSOR_TYPES = {
     SensorType.ILLUMINANCE.value,
     SensorType.TEMPERATURE.value,
-    SensorType.HUMIDITY.value
+    SensorType.HUMIDITY.value,
+    SensorType.CURRENT.value,
+    SensorType.VOLTAGE.value,
+    SensorType.POWER.value,
+    SensorType.POWER_FACTOR.value,
+    SensorType.ENERGY.value
 }
 
 
@@ -101,10 +112,15 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         channel_number = None
 
         if SensorType.TEMPERATURE == sensor_type:
-            if DeviceFamily.PANEL == device_family and len(address2) == 2:
-                channel_number = 1
             if len(address2) > 2:
-                channel_number = int(address2[2])
+                if sensor_type in [SensorType.TEMPERATURE, 
+                              SensorType.VOLTAGE, 
+                              SensorType.CURRENT, 
+                              SensorType.POWER]:
+                    channel_number = int(address2[2])
+                
+            elif DeviceFamily.PANEL == device_family and len(address2) == 2:
+                channel_number = 1
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug(f"Adding sensor '{name}' with address {device_address}, sensor type '{sensor_type}'")
@@ -168,7 +184,17 @@ class BusproSensor(SensorEntity):
         if self._sensor_type == SensorType.HUMIDITY:
             return connected and self._device._current_humidity is not None
         if self._sensor_type == SensorType.ILLUMINANCE:
-            return connected and self._device._brightness is not None
+            return connected and self._brightness is not None        
+        if self._sensor_type == SensorType.CURRENT:
+            return connected and self._device._current is not None
+        if self._sensor_type == SensorType.VOLTAGE:
+            return connected and self._device._voltage is not None
+        if self._sensor_type == SensorType.POWER:
+            return connected and self._device._power is not None
+        if self._sensor_type == SensorType.POWER_FACTOR:
+            return connected and self._device._power_factor is not None
+        if self._sensor_type == SensorType.ENERGY:
+            return connected and self._device._energy is not None
 
     @property
     def state(self):
@@ -178,7 +204,17 @@ class BusproSensor(SensorEntity):
         if self._sensor_type == SensorType.ILLUMINANCE:
             return self._device._brightness
         if self._sensor_type == SensorType.HUMIDITY:
-            return self._device._current_humidity            
+            return self._humidity        
+        if self._sensor_type == SensorType.CURRENT:
+            return self._device._current
+        if self._sensor_type == SensorType.VOLTAGE:
+            return self._device._voltage
+        if self._sensor_type == SensorType.POWER:
+            return self._device._power
+        if self._sensor_type == SensorType.POWER_FACTOR:
+            return self._device._power_factor
+        if self._sensor_type == SensorType.ENERGY:
+            return self._device._energy
 
     @property
     def _current_temperature(self):
@@ -193,25 +229,41 @@ class BusproSensor(SensorEntity):
     def device_class(self):
         """Return the class of this sensor."""
         if self._custom_device_class is not None:
-            return self._custom_device_class            
-        if self._sensor_type == SensorType.TEMPERATURE:
-            return "temperature"
-        if self._sensor_type == SensorType.ILLUMINANCE:
-            return "illuminance"
-        if self._sensor_type == SensorType.HUMIDITY:
-            return "humidity"
-        return None
+            return self._custom_device_class
+        
+        device_classes = {
+            SensorType.TEMPERATURE: SensorDeviceClass.TEMPERATURE,
+            SensorType.ILLUMINANCE: SensorDeviceClass.ILLUMINANCE,
+            SensorType.HUMIDITY: SensorDeviceClass.HUMIDITY,
+            SensorType.CURRENT: SensorDeviceClass.CURRENT,
+            SensorType.VOLTAGE: SensorDeviceClass.VOLTAGE,
+            SensorType.POWER: SensorDeviceClass.POWER,
+            SensorType.POWER_FACTOR: SensorDeviceClass.POWER_FACTOR,
+            SensorType.ENERGY: SensorDeviceClass.ENERGY
+        }
+        return device_classes.get(self._sensor_type)
+
+    @property
+    def state_class(self):
+        """Return the state class of this sensor."""
+        if self._sensor_type == SensorType.ENERGY:
+            return SensorStateClass.TOTAL_INCREASING
+        return SensorStateClass.MEASUREMENT
 
     @property
     def unit_of_measurement(self):
         """Return the unit this state is expressed in."""
-        if self._sensor_type == SensorType.TEMPERATURE:
-            return "°C"
-        if self._sensor_type == SensorType.ILLUMINANCE:
-            return "lux"
-        if self._sensor_type == SensorType.HUMIDITY:
-            return "%"
-        return ""
+        units = {
+            SensorType.TEMPERATURE: "°C",
+            SensorType.ILLUMINANCE: "lux",
+            SensorType.HUMIDITY: "%",
+            SensorType.CURRENT: UnitOfElectricCurrent.AMPERE,
+            SensorType.VOLTAGE: UnitOfElectricPotential.VOLT,
+            SensorType.POWER: UnitOfPower.WATT,
+            SensorType.POWER_FACTOR: PERCENTAGE,
+            SensorType.ENERGY: UnitOfEnergy.KILO_WATT_HOUR
+        }
+        return units.get(self._sensor_type, "")
 
     @property
     def extra_state_attributes(self):
@@ -234,6 +286,8 @@ class BusproSensor(SensorEntity):
             channel = getattr(self._device, "_universal_switch_number", "N")
         elif self._sensor_type == SensorType.SINGLE_CHANNEL:
             channel = getattr(self._device, "_channel_number", "N") 
+        elif self._sensor_type in [SensorType.CURRENT, SensorType.VOLTAGE, SensorType.POWER, SensorType.POWER_FACTOR, SensorType.ENERGY]:
+            channel = getattr(self._device, "_channel_number", "N")
         else:
             channel = "N"
         

@@ -45,6 +45,21 @@ class OperateCode(Enum):
 
     ReadTemperatureStatus = b'\xE3\xE7'
     ReadTemperatureStatusResponse = b'\xE3\xE8'
+
+    ReadVoltage = b'\xD9\x02'
+    ReadVoltageResponse  = b'\xD9\x03'
+
+    ReadCurrent = b'\xD9\x08'
+    ReadCurrentResponse  = b'\xD9\x09'
+
+    ReadPowerStatus = b'\xD9\x0A'
+    ReadPowerStatusResponse  = b'\xD9\x0B'
+
+    ReadPowerFactorStatus = b'\xD9\x04'
+    ReadPowerFactorStatusResponse  = b'\xD9\x05'
+
+    ReadElectricityStatus = b'\xD9\x1A'
+    ReadElectricityStatusResponse  = b'\xD9\x1B'
     
 
     PanelControl = b'\xE3\xD8'

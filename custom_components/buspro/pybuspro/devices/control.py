@@ -151,6 +151,9 @@ class _Control:
                 now.second,
                 (now.weekday() + 1) % 7
             ]
+        elif type(control) == _ReadVoltageStatus:
+            operate_code = OperateCode.ReadVoltage
+            payload = []
 
         else:
             return None
@@ -360,3 +363,8 @@ class _FHMControlFloorHeatingStatus(_Control):
         self.day_temperature = None
         self.night_temperature = None
         self.away_temperature = None
+class _ReadVoltageStatus(_Control):
+    def __init__(self, hass, device_address):
+        super().__init__(hass, device_address)        
+        self.channel_number = None
+

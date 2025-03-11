@@ -60,8 +60,8 @@ class Buspro:
         if telegram.source_address in self._telegram_received_cbs:
             callbacks_to_call.extend(self._telegram_received_cbs[telegram.source_address])
             
-        if telegram.target_address in self._telegram_received_cbs:
-            callbacks_to_call.extend(self._telegram_received_cbs[telegram.target_address])
+#        if telegram.target_address in self._telegram_received_cbs:
+#            callbacks_to_call.extend(self._telegram_received_cbs[telegram.target_address])
             
         unique_callbacks = set(callbacks_to_call)
         

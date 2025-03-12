@@ -27,10 +27,17 @@ class OperateCode(Enum):
 
     BroadcastTemperatureResponse = b'\xE3\xE5'
 
-    ReadFloorHeatingStatus = b'\x19\x44'
-    ReadFloorHeatingStatusResponse = b'\x19\x45'
-    ControlFloorHeatingStatus = b'\x19\x46'
-    ControlFloorHeatingStatusResponse = b'\x19\x47'
+    DLPReadFloorHeatingStatus = b'\x19\x44'
+    DLPReadFloorHeatingStatusResponse = b'\x19\x45'
+    DLPControlFloorHeatingStatus = b'\x19\x46'
+    DLPControlFloorHeatingStatusResponse = b'\x19\x47'
+
+    FHMReadFloorHeatingStatus = b'\x1C\x5E'
+    FHMResponseReadFloorHeatingStatus = b'\x1C\x5F'
+    FHMControlFloorHeatingStatus = b'\x1C\x5C'
+    FHMResponseControlFloorHeatingStatus = b'\x1C\x5D'
+
+
 
     ReadDryContactStatus = b'\x15\xCE'
     ReadDryContactStatusResponse = b'\x15\xCF'
@@ -152,7 +159,21 @@ class TemperatureMode(Enum):
     Timer = 5
 
 
+class WorkType(Enum):
+    """Work type modes for floor heating module."""
+    HEATING = 0
+    COOLING = 1
+    HEATING_POWER = 2
+    COOLING_POWER = 3
 
+
+class OperationMode(Enum):
+    """Operation modes for climate device."""
+    NORMAL = 1
+    DAY = 2
+    NIGHT = 3
+    AWAY = 4
+    TIMER = 5
 
 
 class DeviceFamily(str, Enum):

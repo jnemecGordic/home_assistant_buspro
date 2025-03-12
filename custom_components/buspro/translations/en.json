@@ -33,5 +33,14 @@
         }
       }
     }
+  },
+  "entity": {
+    "climate": {
+      "preset_mode": {
+        "state": {
+          "timer": "Timer"
+        }
+      }
+    }
   }
 }

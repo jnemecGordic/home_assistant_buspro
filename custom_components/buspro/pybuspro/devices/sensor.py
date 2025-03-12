@@ -111,6 +111,7 @@ class Sensor(Device):
                             
                             if -100 < float_temp < 100:
                                 self._current_temperature = float_temp                                
+
                         except (struct.error, ValueError, IndexError) as e:
                             pass
                 

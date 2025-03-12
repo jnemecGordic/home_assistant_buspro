@@ -1,4 +1,5 @@
 import asyncio
+from enum import Enum
 
 from .control import _ReadFloorHeatingStatus, _ControlFloorHeatingStatus
 from .device import Device
@@ -6,22 +7,39 @@ from ..helpers.enums import *
 from ..helpers.generics import Generics
 
 
+class ClimateDeviceType(Enum):
+    """Typ HDL Buspro climate zařízení."""
+    PANEL = "panel"
+    FLOOR_HEATING = "floor_heating"
+    DLP = "dlp"
+    AIR_CONDITIONING = "air_conditioning"
+
+
 class ControlFloorHeatingStatus:
     def __init__(self):
-        self.temperature_type = None
         self.status = None
         self.mode = None
         self.normal_temperature = None
         self.day_temperature = None
         self.night_temperature = None
         self.away_temperature = None
+        self.timer_enabled = None
+        self.watering_time = None
 
 
 class Climate(Device):
-    def __init__(self, hass, device_address, name=""):
-        super().__init__(hass, device_address, name)
+    """Representation of HDL Buspro climate device."""
 
-        
+    def __init__(self, hass, device_address, name="", device_type=ClimateDeviceType.PANEL, channel_number=None):
+        """Initialize climate device."""
+        super().__init__(hass, device_address, name)
+        self._device_type = device_type
+        self._channel_number = channel_number
+        self._temperature = None
+        self._target_temperature = None
+        self._is_on = False
+        self._mode = 1  # Normal mode
+
         self._device_address = device_address
         self._hass = hass
 
@@ -33,6 +51,10 @@ class Climate(Device):
         self._day_temperature = None
         self._night_temperature = None
         self._away_temperature = None
+        self._valve_status = False
+        self._pwd_value = 0
+        self._timer_enabled = False
+        self._watering_time = 0
 
         self.register_telegram_received_cb(self._telegram_received_cb)
         self._call_read_current_heating_status(run_from_init=True)
@@ -185,3 +207,66 @@ class Climate(Device):
             return self._away_temperature
         elif self._mode == TemperatureMode.Night.value:
             return self._night_temperature
+
+    @property
+    def device_type(self):
+        """Return device type."""
+        return self._device_type
+        
+    @property
+    def normal_temperature(self):
+        """Return normal mode temperature."""
+        return self._normal_temperature
+        
+    @property
+    def day_temperature(self):
+        """Return day mode temperature."""
+        return self._day_temperature
+        
+    @property
+    def night_temperature(self):
+        """Return night mode temperature."""
+        return self._night_temperature
+        
+    @property
+    def away_temperature(self):
+        """Return away mode temperature."""
+        return self._away_temperature
+        
+    @property
+    def valve_status(self):
+        """Return valve status (open/closed)."""
+        return self._valve_status
+        
+    @property
+    def pwd_value(self):
+        """Return PWM value of the valve (0-100%)."""
+        return self._pwd_value
+        
+    @property
+    def timer_enabled(self):
+        """Return timer mode (True=Night, False=Day)."""
+        return self._timer_enabled
+        
+    @property
+    def watering_time(self):
+        """Return remaining watering time in minutes."""
+        return self._watering_time
+        
+    async def set_timer_mode(self, night_mode=False):
+        """Set timer mode (night/day)."""
+        if self._device_type != ClimateDeviceType.FLOOR_HEATING:
+            return
+            
+        climate_control = ControlFloorHeatingStatus()
+        climate_control.timer_enabled = night_mode
+        await self.control_heating_status(climate_control)
+        
+    async def start_watering(self, minutes=30):
+        """Start watering cycle for specified minutes."""
+        if self._device_type != ClimateDeviceType.FLOOR_HEATING:
+            return
+            
+        climate_control = ControlFloorHeatingStatus()
+        climate_control.watering_time = minutes
+        await self.control_heating_status(climate_control)

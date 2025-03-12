@@ -147,27 +147,37 @@ binary_sensor:
 
 #### Climate platform
 
-To use your Buspro panel climate control in your installation, add the following to your configuration.yaml file: 
+To use your Buspro climate control in your installation, add the following to your configuration.yaml file: 
 
 ```yaml
 climate:
   - platform: buspro
     devices:
       - address: "1.74"
-        name: Living Room
+        name: Living Room DLP
+        device: dlp
         preset_modes: 
           - none
           - away
           - home
           - sleep
-      - address: "1.74"
-        name: Front Door
+      - address: "1.21.1"
+        name: Bathroom Floor Heating
+        device: floor_heating
+        preset_modes: 
+          - none
+          - away
 ```
 + **devices** _(Required)_: A list of devices to set up
-  + **address** _(string) (Required)_: The address of the sensor device on the format `<subnet ID>.<device ID>`
+  + **address** _(string) (Required)_: The device address format depends on device type:
+    + For DLP panels: `<subnet ID>.<device ID>` (e.g. "1.74")
+    + For Floor Heating: `<subnet ID>.<device ID>.<channel>` where channel is heating zone number (e.g. "1.21.1")
   + **name** _(string) (Required)_: The name of the device
+  + **device** _(string) (Required)_: Type of climate device. Available types:
+    + `dlp` - DLP Panel
+    + `floor_heating` - Floor Heating Module
   + **preset_modes** _(list) (Optional)_: List of supported preset modes. Preset mode selection is disabled if not set. Possible values are shown in table below. Corresponding modes must be enabled in HDL (Floor Heating > Working Settings > Mode).
-  + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (updates handled by system's background polling). Set a specific interval only for entities where you need guaranteed update frequency, as frequent polling of many entities may impact system performance.
+  + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (updates handled by system's background polling).
     
 | HA preset mode | HDL mode |
 |:--------------:|:--------:|

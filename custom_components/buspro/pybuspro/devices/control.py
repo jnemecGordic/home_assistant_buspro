@@ -70,15 +70,45 @@ class _Control:
             payload = [control.channel_number]
 
         elif type(control) == _ReadFloorHeatingStatus:
-            operate_code = OperateCode.ReadFloorHeatingStatus
+            operate_code = OperateCode.DLPReadFloorHeatingStatus
             payload = []
+
+        elif type(control) == _FHMReadFloorHeatingStatus:
+            operate_code = OperateCode.FHMReadFloorHeatingStatus
+            payload = [control.channel_number]
+            _LOGGER.debug(f"FHMReadFloorHeatingStatus: {control.channel_number}")
+
+        elif type(control) == _FHMControlFloorHeatingStatus:
+            operate_code = OperateCode.FHMControlFloorHeatingStatus             
+            
+            if control.work_type is None or control.status is None:
+                _LOGGER.error("Work type cannot be None for FHM Floor Heating control")
+                return None                
+            
+            # Bitové operace
+            work = (control.work_type.value << 4) | (int(control.status) & 0x0F)
+            
+            _LOGGER.debug(f"FHMControlFloorHeatingStatus: channel={control.channel_number}, "
+                         f"work_type={control.work_type.name}({control.work_type.value}), "
+                         f"status={control.status}, work_byte=0x{work:02x}")
+
+            payload = [
+                control.channel_number,
+                work,
+                control.temperature_type,
+                control.mode,
+                control.normal_temperature,
+                control.day_temperature,
+                control.night_temperature,
+                control.away_temperature
+            ]
 
         elif type(control) == _ReadDryContactStatus:
             operate_code = OperateCode.ReadDryContactStatus
             payload = [1, control.switch_number]
 
         elif type(control) == _ControlFloorHeatingStatus:
-            operate_code = OperateCode.ControlFloorHeatingStatus
+            operate_code = OperateCode.DLPControlFloorHeatingStatus
             payload = [control.temperature_type, control.status, control.mode, control.normal_temperature,
                        control.day_temperature, control.night_temperature, control.away_temperature]
             
@@ -295,3 +325,23 @@ class _BroadcastSystemDateandTimeEveryMinute(_Control):
         super().__init__(hass, device_address)
         self.custom_datetime = None
 
+
+
+class _FHMReadFloorHeatingStatus(_Control):
+    def __init__(self, hass, device_address):
+        super().__init__(hass, device_address)
+        self.channel_number = None
+
+
+class _FHMControlFloorHeatingStatus(_Control):
+    def __init__(self, hass, device_address):
+        super().__init__(hass, device_address)
+        self.channel_number = None
+        self.work_type = None
+        self.status = None
+        self.temperature_type = None
+        self.mode = None
+        self.normal_temperature = None
+        self.day_temperature = None
+        self.night_temperature = None
+        self.away_temperature = None

@@ -93,7 +93,7 @@ class Sensor(Device):
                 _LOGGER.debug(f"Sensors-in-one {msg_type} received - temp:{self._current_temperature}, brightness:{self._brightness}, humidity:{self._current_humidity}, motion:{self._motion_sensor}, dc1:{self._dry_contact_1_status}, dc2:{self._dry_contact_2_status}")        
             self._call_device_updated()
 
-        elif telegram.operate_code == OperateCode.ReadFloorHeatingStatusResponse:
+        elif telegram.operate_code == OperateCode.DLPReadFloorHeatingStatusResponse:
             self._current_temperature = telegram.payload[1]
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Floor heating temperature received - temp:{self._current_temperature}")        

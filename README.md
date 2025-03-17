@@ -147,34 +147,47 @@ binary_sensor:
 
 #### Climate platform
 
-To use your Buspro panel climate control in your installation, add the following to your configuration.yaml file: 
+To use your Buspro climate control in your installation, add the following to your configuration.yaml file: 
 
 ```yaml
 climate:
   - platform: buspro
     devices:
-      - address: "1.74"
-        name: Living Room
-        preset_modes: 
-          - none
-          - away
-          - home
-          - sleep
-      - address: "1.74"
-        name: Front Door
+      - address: "1.21.1"
+        name: Bathroom Floor Heating
+        device: floor_heating
+        preset_modes:         # Optional preset modes
+          - none              # Normal mode
+          - away              # Away mode 
+          - home              # Day mode
+          - sleep             # Night mode
+          - eco               # Timer mode (automatic day/night switching)
+        hvac_modes:           # Optional heating/cooling modes
+          - heat              # Heating only mode
+        scan_interval: 60     # Optional polling interval
 ```
 + **devices** _(Required)_: A list of devices to set up
-  + **address** _(string) (Required)_: The address of the sensor device on the format `<subnet ID>.<device ID>`
+  + **address** _(string) (Required)_: The device address format depends on device type:
+    + For Floor Heating: `<subnet ID>.<device ID>.<channel>` where channel is heating zone number (e.g. "1.21.1")
   + **name** _(string) (Required)_: The name of the device
+  + **device** _(string) (Required)_: Type of climate device. Available types:
+    + `floor_heating` - Floor Heating Module
   + **preset_modes** _(list) (Optional)_: List of supported preset modes. Preset mode selection is disabled if not set. Possible values are shown in table below. Corresponding modes must be enabled in HDL (Floor Heating > Working Settings > Mode).
-  + **scan_interval** _(int) (Optional)_: Polling interval in seconds. Default is 0 (updates handled by system's background polling). Set a specific interval only for entities where you need guaranteed update frequency, as frequent polling of many entities may impact system performance.
-    
-| HA preset mode | HDL mode |
-|:--------------:|:--------:|
-|      none      |  Normal  |
-|      away      |   Away   |
-|      home      |   Day    |
-|     sleep      |  Night   |
+  + **hvac_modes** _(list) (Optional)_: List of supported HVAC modes. Possible values:
+    + `heat` - Heating mode
+    + `cool` - Cooling mode
+    Note: OFF mode is always available. If not configured, all supported modes will be enabled.
+  + **scan_interval** _(int) (Optional)_: Polling interval in seconds.
+
+| Home Assistant | HDL Buspro |
+|---------------|------------|
+| none          | Normal     |
+| home          | Day        |
+| sleep         | Night      |
+| away          | Away       |
+| eco           | Timer      |
+
+The ECO preset mode uses HDL Timer mode where temperature is automatically switched between day and night settings according to schedule configured in HDL system. Manual temperature control is disabled in ECO mode.
 
 #### Button platform
 

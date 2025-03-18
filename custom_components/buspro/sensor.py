@@ -12,6 +12,7 @@ import voluptuous as vol
 from homeassistant.components.sensor import (
     PLATFORM_SCHEMA,
     DEVICE_CLASSES_SCHEMA,
+    SensorEntity
 )
 from homeassistant.const import (
     CONF_NAME,
@@ -115,17 +116,14 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 
 
 # noinspection PyAbstractClass
-class BusproSensor(Entity):
+class BusproSensor(SensorEntity):
     """Representation of a Buspro sensor."""
 
     def __init__(self, hass, device, sensor_type, scan_interval, offset, device_class=None):
         self._hass = hass
         self._device = device
         self._sensor_type = sensor_type        
-        self._offset = offset
-        self._temperature = None
-        self._brightness = None
-        self._humidity = None
+        self._offset = offset        
         self._scan_interval = scan_interval
         self._custom_device_class = device_class
         self.async_register_callbacks()
@@ -140,14 +138,10 @@ class BusproSensor(Entity):
     def async_register_callbacks(self):
         """Register callbacks to update hass after device was changed."""
 
-        async def after_update_callback(device):
+        async def after_update_callback(device, should_reschedule=True):
             """Call after device was updated."""
-            if self._hass is not None:
-                self._temperature = self._device.temperature
-                self._brightness = self._device.brightness
-                self._humidity = self._device.humidity                
-                self.async_write_ha_state()
-                await self._hass.data[DATA_BUSPRO].scheduler.device_updated(self.entity_id)
+            self.async_write_ha_state()
+            await self._hass.data[DATA_BUSPRO].scheduler.device_updated(self.entity_id)
 
         self._device.register_device_updated_cb(after_update_callback)
 
@@ -170,11 +164,11 @@ class BusproSensor(Entity):
         connected = self._hass.data[DATA_BUSPRO].connected
 
         if self._sensor_type == SensorType.TEMPERATURE:
-            return connected and self._current_temperature is not None
+            return connected and self._device._current_temperature is not None
         if self._sensor_type == SensorType.HUMIDITY:
-            return connected and self._humidity is not None
+            return connected and self._device._current_humidity is not None
         if self._sensor_type == SensorType.ILLUMINANCE:
-            return connected and self._brightness is not None
+            return connected and self._device._brightness is not None
 
     @property
     def state(self):
@@ -182,16 +176,16 @@ class BusproSensor(Entity):
         if self._sensor_type == SensorType.TEMPERATURE:
             return self._current_temperature
         if self._sensor_type == SensorType.ILLUMINANCE:
-            return self._brightness
+            return self._device._brightness
         if self._sensor_type == SensorType.HUMIDITY:
-            return self._humidity            
+            return self._device._current_humidity            
 
     @property
     def _current_temperature(self):
-        if self._temperature is None:
+        if self._device._current_temperature is None:
             return None
         if self._offset is not None:
-            return self._temperature + int(self._offset)
+            return self._device._current_temperature + int(self._offset)
         return self._temperature
         
 

@@ -38,11 +38,8 @@ class Device(object):
 
     async def _device_updated(self, should_reschedule=True):
         """Device update callback with scheduler reset flag."""
-        for device_updated_cb in self.device_updated_cbs:
-            if hasattr(device_updated_cb, '__code__') and 'should_reschedule' in device_updated_cb.__code__.co_varnames:
-                await device_updated_cb(self, should_reschedule)
-            else:
-                await device_updated_cb(self)
+        for device_updated_cb in self.device_updated_cbs:            
+            await device_updated_cb(self, should_reschedule)            
 
     async def _send_telegram(self, telegram):
         await self._buspro.network_interface.send_telegram(telegram)

@@ -166,8 +166,23 @@ class _Control:
         return self.build_telegram_from_control(self)
 
     async def send(self):
-        telegram = self.telegram
-        await self._hass.data[DATA_BUSPRO].hdl.network_interface.send_telegram(telegram)
+        """Send telegram through network interface."""
+        try:
+            await self._hass.data[DATA_BUSPRO].hdl.network_interface.send_telegram(self.telegram)
+            
+        except AttributeError as e:
+            if self.telegram is None:
+                _LOGGER.warning("Cannot send empty telegram")
+            elif DATA_BUSPRO not in self._hass.data:
+                _LOGGER.warning("Buspro module is not initialized")
+            elif not self._hass.data[DATA_BUSPRO].hdl:
+                _LOGGER.warning("HDL instance is not initialized")
+            elif not self._hass.data[DATA_BUSPRO].hdl.network_interface:
+                _LOGGER.warning("Network interface is not ready")
+            else:
+                _LOGGER.warning(f"Cannot send telegram - component not fully initialized: {e}")
+        except Exception as e:
+            _LOGGER.error(f"Error sending telegram: {e}")
 
 
 class _GenericControl(_Control):

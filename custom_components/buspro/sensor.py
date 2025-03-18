@@ -100,7 +100,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         channel_number = None
 
         if SensorType.TEMPERATURE == sensor_type:
-            if DeviceFamily.PANEL == device_family:
+            if DeviceFamily.PANEL == device_family and len(address2) == 2:
                 channel_number = 1
             if len(address2) > 2:
                 channel_number = int(address2[2])
@@ -230,7 +230,11 @@ class BusproSensor(Entity):
         """Return unique ID for this sensor."""
         subnet, device = self._device._device_address
         
-        if self._sensor_type == SensorType.DRY_CONTACT:
+        if self._sensor_type == SensorType.TEMPERATURE:            
+            channel = getattr(self._device, "_channel_number", "N")            
+            if DeviceFamily.PANEL == self._device._device_family and channel == 1:
+                channel = "N"
+        elif self._sensor_type == SensorType.DRY_CONTACT:
             channel = getattr(self._device, "_switch_number", "N")
         elif self._sensor_type == SensorType.UNIVERSAL_SWITCH:
             channel = getattr(self._device, "_universal_switch_number", "N")

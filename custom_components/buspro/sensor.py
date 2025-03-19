@@ -14,6 +14,7 @@ from homeassistant.components.sensor import (
     DEVICE_CLASSES_SCHEMA,
     SensorDeviceClass,
     SensorStateClass,
+    SensorEntity
 )
 from homeassistant.const import (
     CONF_NAME,
@@ -184,7 +185,7 @@ class BusproSensor(SensorEntity):
         if self._sensor_type == SensorType.HUMIDITY:
             return connected and self._device._current_humidity is not None
         if self._sensor_type == SensorType.ILLUMINANCE:
-            return connected and self._brightness is not None        
+            return connected and self._device._brightness is not None        
         if self._sensor_type == SensorType.CURRENT:
             return connected and self._device._current is not None
         if self._sensor_type == SensorType.VOLTAGE:
@@ -204,7 +205,7 @@ class BusproSensor(SensorEntity):
         if self._sensor_type == SensorType.ILLUMINANCE:
             return self._device._brightness
         if self._sensor_type == SensorType.HUMIDITY:
-            return self._humidity        
+            return self._device._current_humidity
         if self._sensor_type == SensorType.CURRENT:
             return self._device._current
         if self._sensor_type == SensorType.VOLTAGE:

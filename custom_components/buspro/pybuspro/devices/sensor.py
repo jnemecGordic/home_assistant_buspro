@@ -20,7 +20,7 @@ class SensorType(Enum):
     POWER_FACTOR = "power_factor"
     ENERGY = "energy"
 
-from .control import _Read12in1SensorStatus, _ReadStatusOfUniversalSwitch, _ReadStatusOfChannels, _ReadFloorHeatingStatus, \
+from .control import _Read12in1SensorStatus, _ReadCurrentStatus, _ReadElectricityStatus, _ReadPowerFactorStatus, _ReadPowerStatus, _ReadStatusOfUniversalSwitch, _ReadStatusOfChannels, _ReadFloorHeatingStatus, \
     _ReadDryContactStatus, _ReadSensorsInOneStatus, _ReadTemperatureStatus, _ReadVoltageStatus
 from .device import Device
 from ..helpers.enums import *
@@ -175,6 +175,39 @@ class Sensor(Device):
                     _LOGGER.debug(f"Voltage received for device {self._device_address} channel {self._channel_number} - voltage:{self._voltage}")
                 self._call_device_updated()
 
+        elif telegram.operate_code == OperateCode.ReadCurrentResponse:
+            if self._channel_number is not None and 1 <= self._channel_number <= 3:
+                offset = (self._channel_number - 1) * 4
+                self._current = round((telegram.payload[offset] * 10.0) + (telegram.payload[offset + 1] ) + (telegram.payload[offset + 2] / 10.0) + (telegram.payload[offset + 3] / 100.0),2)                
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"Current received for device {self._device_address} channel {self._channel_number} - current:{self._current}")
+                self._call_device_updated()
+
+        elif telegram.operate_code == OperateCode.ReadPowerStatusResponse:
+            if self._channel_number is not None and 1 <= self._channel_number <= 3:
+                offset = (self._channel_number - 1) * 4
+                self._power = round((telegram.payload[offset] * 10.0) + (telegram.payload[offset + 1] ) + (telegram.payload[offset + 2] / 10.0) + (telegram.payload[offset + 3] / 100.0),2)                
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"Power received for device {self._device_address} channel {self._channel_number} - power:{self._power}")
+                self._call_device_updated()
+
+        elif telegram.operate_code == OperateCode.ReadPowerFactorStatusResponse:
+            if self._channel_number is not None and 1 <= self._channel_number <= 3:
+                offset = (self._channel_number - 1) * 4
+                self._power_factor = round((telegram.payload[offset] * 10.0) + (telegram.payload[offset + 1] ) + (telegram.payload[offset + 2] / 10.0) + (telegram.payload[offset + 3] / 100.0),2)                
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"Power factor received for device {self._device_address} channel {self._channel_number} - power factor:{self._power_factor }")
+                self._call_device_updated()
+
+        elif telegram.operate_code == OperateCode.ReadElectricityStatusResponse:
+            if self._channel_number is not None and 1 <= self._channel_number <= 3:
+                offset = (self._channel_number - 1) * 4
+                self._energy = round((telegram.payload[offset] * 10.0) + (telegram.payload[offset + 1] ) + (telegram.payload[offset + 2] / 10.0) + (telegram.payload[offset + 3] / 100.0),2)                
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug(f"Energy received for device {self._device_address} channel {self._channel_number} - energy:{self._energy}")
+                self._call_device_updated()
+
+
     async def read_sensor_status(self):
         if self._device_family is not None and self._device_family == DeviceFamily.DLP:
             if _LOGGER.isEnabledFor(logging.DEBUG):
@@ -213,9 +246,35 @@ class Sensor(Device):
         elif self._sensor_type is not None and self._sensor_type == SensorType.VOLTAGE and self._channel_number is not None:            
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Reading voltage status for device {self._device_address}, channel {self._channel_number}")
-            rvs = _ReadVoltageStatus(self._hass, self._device_address)                        
-            rvs.channel_number = self._channel_number
-            await rvs.send()
+            rps = _ReadVoltageStatus(self._hass, self._device_address)                        
+            rps.channel_number = self._channel_number
+            await rps.send()
+        elif self._sensor_type is not None and self._sensor_type == SensorType.CURRENT and self._channel_number is not None:            
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Reading current status for device {self._device_address}, channel {self._channel_number}")
+            rps = _ReadCurrentStatus(self._hass, self._device_address)                        
+            rps.channel_number = self._channel_number
+            await rps.send()
+        elif self._sensor_type is not None and self._sensor_type == SensorType.POWER and self._channel_number is not None:            
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Reading voltage status for device {self._device_address}, channel {self._channel_number}")
+            rps = _ReadPowerStatus(self._hass, self._device_address)                        
+            rps.channel_number = self._channel_number
+            await rps.send()
+        elif self._sensor_type is not None and self._sensor_type == SensorType.POWER_FACTOR and self._channel_number is not None:            
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Reading voltage status for device {self._device_address}, channel {self._channel_number}")
+            rpfs = _ReadPowerFactorStatus(self._hass, self._device_address)                        
+            rpfs.channel_number = self._channel_number
+            await rpfs.send()
+        elif self._sensor_type is not None and self._sensor_type == SensorType.ENERGY and self._channel_number is not None:            
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(f"Reading voltage status for device {self._device_address}, channel {self._channel_number}")
+            res = _ReadElectricityStatus(self._hass, self._device_address)                        
+            res.channel_number = self._channel_number
+            await res.send()
+
+
         elif self._sensor_type is not None and self._channel_number is not None:
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Reading channel status for device {self._device_address}")

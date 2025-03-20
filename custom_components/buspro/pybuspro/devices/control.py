@@ -154,6 +154,19 @@ class _Control:
         elif type(control) == _ReadVoltageStatus:
             operate_code = OperateCode.ReadVoltage
             payload = []
+        elif type(control) == _ReadCurrentStatus:
+            operate_code = OperateCode.ReadCurrent
+            payload = []
+        elif type(control) == _ReadPowerStatus:
+            operate_code = OperateCode.ReadPowerStatus
+            payload = []
+        elif type(control) == _ReadPowerFactorStatus:
+            operate_code = OperateCode.ReadPowerFactorStatus
+            payload = []
+        elif type(control) == _ReadElectricityStatus:
+            operate_code = OperateCode.ReadElectricityStatus
+            payload = []
+
 
         else:
             return None
@@ -363,8 +376,29 @@ class _FHMControlFloorHeatingStatus(_Control):
         self.day_temperature = None
         self.night_temperature = None
         self.away_temperature = None
+
+
 class _ReadVoltageStatus(_Control):
     def __init__(self, hass, device_address):
         super().__init__(hass, device_address)        
         self.channel_number = None
 
+class _ReadCurrentStatus(_Control):
+    def __init__(self, hass, device_address):
+        super().__init__(hass, device_address)        
+        self.channel_number = None
+
+class _ReadPowerStatus(_Control):
+    def __init__(self, hass, device_address):
+        super().__init__(hass, device_address)        
+        self.channel_number = None
+
+class _ReadPowerFactorStatus(_Control):
+    def __init__(self, hass, device_address):
+        super().__init__(hass, device_address)        
+        self.channel_number = None
+
+class _ReadElectricityStatus(_Control):
+    def __init__(self, hass, device_address):
+        super().__init__(hass, device_address)        
+        self.channel_number = None

@@ -112,15 +112,10 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         device_address = (int(address2[0]), int(address2[1]))        
         channel_number = None
 
-        if SensorType.TEMPERATURE == sensor_type:
-            if len(address2) > 2:
-                if sensor_type in [SensorType.TEMPERATURE, 
-                              SensorType.VOLTAGE, 
-                              SensorType.CURRENT, 
-                              SensorType.POWER]:
-                    channel_number = int(address2[2])
+        if SensorType.TEMPERATURE in [SensorType.TEMPERATURE,SensorType.VOLTAGE,SensorType.CURRENT,SensorType.POWER] and len(address2) > 2:    
+            channel_number = int(address2[2])
                 
-            elif DeviceFamily.PANEL == device_family and len(address2) == 2:
+        if SensorType.TEMPERATURE == sensor_type and DeviceFamily.PANEL == device_family and len(address2) == 2:
                 channel_number = 1
 
         if _LOGGER.isEnabledFor(logging.DEBUG):

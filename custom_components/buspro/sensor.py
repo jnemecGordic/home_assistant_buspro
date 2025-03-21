@@ -29,6 +29,8 @@ from homeassistant.const import (
     UnitOfElectricPotential,
     UnitOfPower,
     UnitOfEnergy,
+    UnitOfApparentPower,
+    UnitOfReactivePower,
     PERCENTAGE,
 )
 from homeassistant.core import callback
@@ -53,9 +55,11 @@ SENSOR_TYPES = {
     SensorType.HUMIDITY.value,
     SensorType.CURRENT.value,
     SensorType.VOLTAGE.value,
-    SensorType.POWER.value,
     SensorType.POWER_FACTOR.value,
-    SensorType.ENERGY.value
+    SensorType.ENERGY.value,
+    SensorType.ACTIVE_POWER.value,
+    SensorType.REACTIVE_POWER.value,
+    SensorType.APPARENT_POWER.value,
 }
 
 
@@ -185,12 +189,16 @@ class BusproSensor(SensorEntity):
             return connected and self._device._current is not None
         if self._sensor_type == SensorType.VOLTAGE:
             return connected and self._device._voltage is not None
-        if self._sensor_type == SensorType.POWER:
-            return connected and self._device._power is not None
         if self._sensor_type == SensorType.POWER_FACTOR:
             return connected and self._device._power_factor is not None
         if self._sensor_type == SensorType.ENERGY:
             return connected and self._device._energy is not None
+        if self._sensor_type == SensorType.ACTIVE_POWER:
+            return connected and self._device._active_power is not None
+        if self._sensor_type == SensorType.REACTIVE_POWER:
+            return connected and self._device._reactive_power is not None
+        if self._sensor_type == SensorType.APPARENT_POWER:
+            return connected and self._device._apparent_power is not None
 
     @property
     def state(self):
@@ -205,8 +213,12 @@ class BusproSensor(SensorEntity):
             return self._device._current
         if self._sensor_type == SensorType.VOLTAGE:
             return self._device._voltage
-        if self._sensor_type == SensorType.POWER:
-            return self._device._power
+        if self._sensor_type == SensorType.ACTIVE_POWER:
+            return self._device._active_power
+        if self._sensor_type == SensorType.REACTIVE_POWER:
+            return self._device._reactive_power
+        if self._sensor_type == SensorType.APPARENT_POWER:
+            return self._device._apparent_power
         if self._sensor_type == SensorType.POWER_FACTOR:
             return self._device._power_factor
         if self._sensor_type == SensorType.ENERGY:
@@ -235,7 +247,10 @@ class BusproSensor(SensorEntity):
             SensorType.VOLTAGE: SensorDeviceClass.VOLTAGE,
             SensorType.POWER: SensorDeviceClass.POWER,
             SensorType.POWER_FACTOR: SensorDeviceClass.POWER_FACTOR,
-            SensorType.ENERGY: SensorDeviceClass.ENERGY
+            SensorType.ENERGY: SensorDeviceClass.ENERGY,
+            SensorType.ACTIVE_POWER: SensorDeviceClass.POWER,
+            SensorType.REACTIVE_POWER: SensorDeviceClass.REACTIVE_POWER,
+            SensorType.APPARENT_POWER: SensorDeviceClass.APPARENT_POWER,
         }
         return device_classes.get(self._sensor_type)
 
@@ -257,7 +272,10 @@ class BusproSensor(SensorEntity):
             SensorType.VOLTAGE: UnitOfElectricPotential.VOLT,
             SensorType.POWER: UnitOfPower.WATT,
             SensorType.POWER_FACTOR: PERCENTAGE,
-            SensorType.ENERGY: UnitOfEnergy.KILO_WATT_HOUR
+            SensorType.ENERGY: UnitOfEnergy.KILO_WATT_HOUR,
+            SensorType.ACTIVE_POWER: UnitOfPower.WATT,
+            SensorType.REACTIVE_POWER: UnitOfReactivePower.VOLT_AMPERE_REACTIVE,
+            SensorType.APPARENT_POWER: UnitOfApparentPower.VOLT_AMPERE,
         }
         return units.get(self._sensor_type, "")
 

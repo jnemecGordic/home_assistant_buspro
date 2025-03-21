@@ -16,7 +16,9 @@ class SensorType(Enum):
     SINGLE_CHANNEL = "single_channel"
     CURRENT = "current"
     VOLTAGE = "voltage"
-    POWER = "power"
+    ACTIVE_POWER = "active_power"  # Only active power
+    REACTIVE_POWER = "reactive_power"  # Reactive power (VAr)
+    APPARENT_POWER = "apparent_power"  # Apparent power (VA)
     POWER_FACTOR = "power_factor"
     ENERGY = "energy"
 
@@ -55,7 +57,9 @@ class Sensor(Device):
         # Add new properties for power measurement
         self._current = None
         self._voltage = None
-        self._power = None
+        self._active_power = None
+        self._reactive_power = None
+        self._apparent_power = None
         self._power_factor = None
         self._energy = None
 
@@ -184,11 +188,26 @@ class Sensor(Device):
                 self._call_device_updated()
 
         elif telegram.operate_code == OperateCode.ReadPowerStatusResponse:
-            if self._channel_number is not None and 1 <= self._channel_number <= 3:
-                offset = (self._channel_number - 1) * 4
-                self._power = round((telegram.payload[offset] * 10.0) + (telegram.payload[offset + 1] ) + (telegram.payload[offset + 2] / 10.0) + (telegram.payload[offset + 3] / 100.0),2)                
+            if self._channel_number is not None and 1 <= self._channel_number <= 4:  # Kanály 1-3 jsou fáze, 4 je total                
+                offset = (self._channel_number - 1) * 2  # 2 byty na hodnotu                
+                    
+                # Active Power (prvních 8 bytů - 3 fáze + total)
+                self._active_power = (telegram.payload[offset] * 256) + telegram.payload[offset + 1]
+                
+                # Reactive Power (druhých 8 bytů)
+                offset += 8  # Posun na reactive power sekci
+                self._reactive_power = (telegram.payload[offset] * 256) + telegram.payload[offset + 1]
+                
+                # Apparent Power (třetích 8 bytů)
+                offset += 8  # Posun na apparent power sekci
+                self._apparent_power = (telegram.payload[offset] * 256) + telegram.payload[offset + 1]
+                
                 if _LOGGER.isEnabledFor(logging.DEBUG):
-                    _LOGGER.debug(f"Power received for device {self._device_address} channel {self._channel_number} - power:{self._power}")
+                    phase = "total" if self._channel_number == 4 else f"phase {self._channel_number}"
+                    _LOGGER.debug(f"Power received for device {self._device_address} {phase}:"
+                                 f" active:{self._active_power}W,"
+                                 f" reactive:{self._reactive_power}VAr,"
+                                 f" apparent:{self._apparent_power}VA")
                 self._call_device_updated()
 
         elif telegram.operate_code == OperateCode.ReadPowerFactorStatusResponse:
@@ -200,9 +219,9 @@ class Sensor(Device):
                 self._call_device_updated()
 
         elif telegram.operate_code == OperateCode.ReadElectricityStatusResponse:
-            if self._channel_number is not None and 1 <= self._channel_number <= 3:
-                offset = (self._channel_number - 1) * 4
-                self._energy = round((telegram.payload[offset] * 10.0) + (telegram.payload[offset + 1] ) + (telegram.payload[offset + 2] / 10.0) + (telegram.payload[offset + 3] / 100.0),2)                
+            if self._channel_number is not None and 1 <= self._channel_number <= 4:
+                offset = (self._channel_number - 1) * 2
+                self._energy = (telegram.payload[offset] * 256) + telegram.payload[offset + 1]
                 if _LOGGER.isEnabledFor(logging.DEBUG):
                     _LOGGER.debug(f"Energy received for device {self._device_address} channel {self._channel_number} - energy:{self._energy}")
                 self._call_device_updated()

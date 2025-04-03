@@ -1,42 +1,56 @@
 import traceback
 from struct import *
 
+import crcmod
+
 from .enums import DeviceType
 from .generics import Generics
 from ..core.telegram import Telegram
 from ..devices.control import *
+_LOGGER = logging.getLogger(__name__)
 
-
-class TelegramHelper:
+class TelegramHelper:    
+    IDX_LENGTH = 16
+    IDX_SRC_SUBNET = 17
+    IDX_SRC_DEVICE = 18
+    IDX_DEV_TYPE = 19
+    IDX_OP_CODE = 21
+    IDX_TGT_SUBNET = 23
+    IDX_TGT_DEVICE = 24
+    IDX_CONTENT = 25
+    CONTENT_LENGTH_OFFSET = 11
+    HDL_HEADER = b'\xC0\xA8\x01\x0FHDLMIRACLE\xAA\xAA'
+    
+    def __init__(self):
+        """Initialize the telegram helper."""
+        self.crc16func = crcmod.mkCrcFun(0x11021, initCrc=0, rev=False, xorOut=0)
 
     def build_telegram_from_udp_data(self, data, address):
+        """Build telegram from UDP data."""
         if not data:
-            print("build_telegram_from_udp_data: not data")
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug("build_telegram_from_udp_data: no data")
             return None
 
         try:
-            index_length_of_data_package = 16
-            index_original_subnet_id = 17
-            index_original_device_id = 18
-            index_original_device_type = 19
-            index_operate_code = 21
-            index_target_subnet_id = 23
-            index_target_device_id = 24
-            index_content = 25
-            length_of_data_package = data[index_length_of_data_package]
-
-            source_device_id = data[index_original_device_id]
-            content_length = length_of_data_package - 1 - 1 - 1 - 2 - 2 - 1 - 1 - 1 - 1
-            source_subnet_id = data[index_original_subnet_id]
-            source_device_type_hex = data[index_original_device_type:index_original_device_type + 2]
-            operate_code_hex = data[index_operate_code:index_operate_code + 2]
-            target_subnet_id = data[index_target_subnet_id]
-            target_device_id = data[index_target_device_id]
-            content = data[index_content:index_content + content_length]
+            # Get length and calculate content length
+            length_of_data_package = data[self.IDX_LENGTH]
+            content_length = length_of_data_package - self.CONTENT_LENGTH_OFFSET
+            
+            # Extract device info and addresses
+            source_subnet_id = data[self.IDX_SRC_SUBNET]
+            source_device_id = data[self.IDX_SRC_DEVICE]
+            source_device_type_hex = data[self.IDX_DEV_TYPE:self.IDX_DEV_TYPE + 2]
+            operate_code_hex = data[self.IDX_OP_CODE:self.IDX_OP_CODE + 2]
+            target_subnet_id = data[self.IDX_TGT_SUBNET]
+            target_device_id = data[self.IDX_TGT_DEVICE]
+            
+            # Extract content and CRC
+            content = data[self.IDX_CONTENT:self.IDX_CONTENT + content_length]
             crc = data[-2:]
 
+            # Create and populate telegram
             generics = Generics()
-
             telegram = Telegram()
             telegram.source_device_type = generics.get_enum_value(DeviceType, source_device_type_hex)
             telegram.udp_data = data
@@ -47,102 +61,69 @@ class TelegramHelper:
             telegram.payload = generics.hex_to_integer_list(content)
             telegram.crc = crc
 
-            crc_check_pass = self._check_crc(telegram)
-            if not crc_check_pass:
-                print("crc check failed")
+            # Validate CRC
+            if not self._check_crc(telegram):
+                _LOGGER.error("CRC check failed")
                 return None
 
             return telegram
+            
         except Exception as e:
-            print("error building telegram: {}".format(traceback.format_exc()))
+            _LOGGER.error(f"Error building telegram: {traceback.format_exc()}")
             return None
 
-    @staticmethod
-    def replace_none_values(telegram: Telegram):
-        if telegram is None:
-            return None
-        if telegram.payload is None:
-            telegram.payload = []
-        if telegram.source_address is None:
-            telegram.source_address = [200, 200]
-        if telegram.source_device_type is None:
-            telegram.source_device_type = DeviceType.PyBusPro
-        return telegram
-
-    # noinspection SpellCheckingInspection
     def build_send_buffer(self, telegram: Telegram):
-        send_buf = bytearray([192, 168, 1, 15])
-        # noinspection SpellCheckingInspection
-        send_buf.extend('HDLMIRACLE'.encode())
-        send_buf.append(0xAA)
-        send_buf.append(0xAA)
-
+        """Optimized version of build_send_buffer."""
         if telegram is None:
             return None
 
-        if telegram.payload is None:
-            telegram.payload = []
-
-        length_of_data_package = 11 + len(telegram.payload)
-        send_buf.append(length_of_data_package)
-
+        # Calculate payload length and total buffer size 
+        payload = telegram.payload or []
+        length_of_data_package = 11 + len(payload)
+        buffer_size = 16 + length_of_data_package  # Pre-allocate correct size
+        
+        # Create buffer with pre-allocated size
+        send_buf = bytearray(buffer_size)
+        
+        # Insert fixed header (preprocessed constant data)        
+        send_buf[:16] = self.HDL_HEADER
+        
+        # Insert packet length
+        send_buf[16] = length_of_data_package        
+        
+        # Process source address
         if telegram.source_address is not None:
-            sender_subnet_id, sender_device_id = telegram.source_address
+            send_buf[17] = telegram.source_address[0]  # sender_subnet_id
+            send_buf[18] = telegram.source_address[1]  # sender_device_id
         else:
-            sender_subnet_id = 200
-            sender_device_id = 200
-
-        send_buf.append(sender_subnet_id)
-        send_buf.append(sender_device_id)
-
-        if telegram.source_device_type is not None:
-            source_device_type_hex = telegram.source_device_type.value
-            send_buf.append(source_device_type_hex[0])
-            send_buf.append(source_device_type_hex[1])
-        else:
-            send_buf.append(0)
-            send_buf.append(0)
-
-        # if telegram.source_device_type_hex is not None:
-        #    send_buf.append(telegram.source_device_type_hex[0])
-        #    send_buf.append(telegram.source_device_type_hex[1])
-        # else:
-        #     send_buf.append(0)
-        #    send_buf.append(0)
-        #    # send_buf.append(b'\x00\x00')
-
+            send_buf[17] = 254
+            send_buf[18] = 253        
+        
+        # Process device type
+        #if telegram.source_device_type is not None:
+        #    source_device_type_hex = telegram.source_device_type.value
+        #    send_buf[19:21] = bytes(source_device_type_hex)
+        #else:
+        send_buf[19:21] = b'\xFF\xFC'
+        
+        # Insert operate code
         operate_code_hex = telegram.operate_code.value
-        send_buf.append(operate_code_hex[0])
-        send_buf.append(operate_code_hex[1])
-
+        send_buf[21:23] = bytes(operate_code_hex)
+        
+        # Insert target address
         target_subnet_id, target_device_id = telegram.target_address
-        send_buf.append(target_subnet_id)
-        send_buf.append(target_device_id)
-
-        for byte in telegram.payload:
-            send_buf.append(byte)
-
-        # crc_buf_length = length_of_data_package - 2
-        # crc_buf = send_buf[-crc_buf_length:]
-        # crc_buf_as_bytes = bytes(crc_buf)
-        # crc = self._crc16(crc_buf_as_bytes)
-        # hex_byte_array = pack(">H", crc)
-        # send_buf.append(hex_byte_array[0])
-        # send_buf.append(hex_byte_array[1])
-
-        crc_0, crc_1 = self._calculate_crc(length_of_data_package, send_buf)
-        send_buf.append(crc_0)
-        send_buf.append(crc_1)
-
+        send_buf[23] = target_subnet_id
+        send_buf[24] = target_device_id        
+        
+        # Insert payload in single operation
+        if payload:
+            send_buf[25:25+len(payload)] = bytes(payload)        
+        
+        # Calculate and add CRC
+        crc = self.crc16func(send_buf[16:16+length_of_data_package-2])
+        send_buf[25+len(payload):] = pack(">H", crc)
         return send_buf
 
-    def _calculate_crc(self, length_of_data_package, send_buf):
-        crc_buf_length = length_of_data_package - 2
-        crc_buf = send_buf[-crc_buf_length:]
-        crc_buf_as_bytes = bytes(crc_buf)
-        crc = self._crc16(crc_buf_as_bytes)
-
-        return pack(">H", crc)
 
     def _calculate_crc_from_telegram(self, telegram):
         length_of_data_package = 11 + len(telegram.payload)
@@ -150,33 +131,15 @@ class TelegramHelper:
         send_buf = telegram.udp_data[:-2]
         crc_buf = send_buf[-crc_buf_length:]
         crc_buf_as_bytes = bytes(crc_buf)
-        crc = self._crc16(crc_buf_as_bytes)
+        crc = self.crc16func(crc_buf_as_bytes)
         
         return pack(">H", crc)
 
-    def _check_crc(self, telegram):
-        # crc = data[-2:]
+    def _check_crc(self, telegram):        
         calculated_crc = self._calculate_crc_from_telegram(telegram)
         if calculated_crc == telegram.crc:
             return True
         return False
 
-    @staticmethod
-    def _crc16(data: bytes):
-        xor_in = 0x0000  # initial value
-        xor_out = 0x0000  # final XOR value
-        poly = 0x1021  # generator polinom (normal form)
-    
-        reg = xor_in
-        for octet in data:
-            # reflect in
-            for i in range(8):
-                topbit = reg & 0x8000
-                if octet & (0x80 >> i):
-                    topbit ^= 0x8000
-                reg <<= 1
-                if topbit:
-                    reg ^= poly
-            reg &= 0xFFFF
-            # reflect out
-        return reg ^ xor_out
+
+

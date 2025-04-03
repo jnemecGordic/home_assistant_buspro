@@ -3,15 +3,35 @@
     "step": {
       "user": {
         "title": "Buspro gateway configuration",
-        "description": "Enter IP address and port number of the gateway.",
+        "description": "Enter the broadcast IP address and port number",
         "data": {
-          "host": "Host IP address",
-          "port": "Port number"
+          "broadcast_address": "Broadcast IP address",
+          "broadcast_port": "Port number",
+          "time_broadcast": "Network Time Provider"
+        },
+        "data_description": {
+          "time_broadcast": "When enabled, Home Assistant will act as a time source for HDL Buspro devices by broadcasting current time every minute"
         }
       }
     },
     "error": {
       "unknown": "An error occured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Buspro Options",
+        "description": "Configure Buspro gateway settings",
+        "data": {
+          "broadcast_address": "Broadcast IP address",
+          "broadcast_port": "Port number",
+          "time_broadcast": "Network Time Provider"
+        },
+        "data_description": {
+          "time_broadcast": "When enabled, Home Assistant will act as a time source for HDL Buspro devices by broadcasting current time every minute"
+        }
+      }
     }
   }
 }

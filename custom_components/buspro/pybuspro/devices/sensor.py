@@ -3,25 +3,6 @@ import logging
 import struct
 from enum import Enum
 
-class SensorType(Enum):
-    TEMPERATURE = "temperature"
-    ILLUMINANCE = "illuminance"
-    HUMIDITY = "humidity"
-    MOTION = "motion"
-    SONIC = "sonic"
-    DRY_CONTACT = "dry_contact"
-    DRY_CONTACT_1 = "dry_contact_1"
-    DRY_CONTACT_2 = "dry_contact_2"
-    UNIVERSAL_SWITCH = "universal_switch"
-    SINGLE_CHANNEL = "single_channel"
-    CURRENT = "current"
-    VOLTAGE = "voltage"
-    ACTIVE_POWER = "active_power"  # Only active power
-    REACTIVE_POWER = "reactive_power"  # Reactive power (VAr)
-    APPARENT_POWER = "apparent_power"  # Apparent power (VA)
-    POWER_FACTOR = "power_factor"
-    ENERGY = "energy"
-
 from .control import _Read12in1SensorStatus, _ReadCurrentStatus, _ReadElectricityStatus, _ReadPowerFactorStatus, _ReadPowerStatus, _ReadStatusOfUniversalSwitch, _ReadStatusOfChannels, _ReadFloorHeatingStatus, \
     _ReadDryContactStatus, _ReadSensorsInOneStatus, _ReadTemperatureStatus, _ReadVoltageStatus
 from .device import Device
@@ -274,7 +255,7 @@ class Sensor(Device):
             rps = _ReadCurrentStatus(self._hass, self._device_address)                        
             rps.channel_number = self._channel_number
             await rps.send()
-        elif self._sensor_type is not None and self._sensor_type == SensorType.POWER and self._channel_number is not None:            
+        elif self._sensor_type is not None and self._sensor_type == SensorType.ACTIVE_POWER and self._channel_number is not None:            
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(f"Reading voltage status for device {self._device_address}, channel {self._channel_number}")
             rps = _ReadPowerStatus(self._hass, self._device_address)                        

@@ -56,10 +56,10 @@ class OperateCode(Enum):
     ReadPowerStatusResponse  = b'\xD9\x0B'
 
     ReadPowerFactorStatus = b'\xD9\x04'
-    ReadPowerFactorStatusResponse  = b'\xD9\x05'
+    ReadPowerFactorStatusResponse = b'\xD9\x05'
 
     ReadElectricityStatus = b'\xD9\x1A'
-    ReadElectricityStatusResponse  = b'\xD9\x1B'
+    ReadElectricityStatusResponse = b'\xD9\x1B'
     
 
     PanelControl = b'\xE3\xD8'
@@ -196,6 +196,34 @@ class DeviceFamily(str, Enum):
     DLP = "dlp"
     PANEL = "panel"
     SENSORS_IN_ONE = "sensors_in_one"
+    RELAY = "relay"
+    
+
+class SensorType(Enum):
+    TEMPERATURE = "temperature"
+    ILLUMINANCE = "illuminance"
+    HUMIDITY = "humidity"
+    MOTION = "motion"
+    SONIC = "sonic"
+    DRY_CONTACT = "dry_contact"
+    DRY_CONTACT_1 = "dry_contact_1"
+    DRY_CONTACT_2 = "dry_contact_2"
+    UNIVERSAL_SWITCH = "universal_switch"
+    SINGLE_CHANNEL = "single_channel"
+    CURRENT = "current"
+    VOLTAGE = "voltage"
+    ACTIVE_POWER = "active_power"  # Only active power
+    REACTIVE_POWER = "reactive_power"  # Reactive power (VAr)
+    APPARENT_POWER = "apparent_power"  # Apparent power (VA)
+    POWER_FACTOR = "power_factor"
+    ENERGY = "energy"
+    
+
+class SwitchType(str, Enum):
+    """Switch type enum."""
+    RELAY = "relay"  # Standard relay switch
+    UNIVERSAL_SWITCH = "universal_switch"  # Universal switch
+
 
 def validate_device_family(value):
     """Validate device family value."""

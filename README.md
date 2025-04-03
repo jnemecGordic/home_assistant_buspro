@@ -64,10 +64,15 @@ switch:
     devices:
       "1.79.1":
         name: Living Room Panel Button 1
-        device: panel
-      "1.79.2":
-        name: Front Door Panel Button 2
-        device: panel
+        device: panel        # Panel device type
+      "1.79.2": 
+        name: Relay Switch Channel
+        device: relay       # Relay device type (default)
+        type: relay        # Relay switch type (default)
+      "1.79.3":
+        name: Universal Switch
+        device: relay      # Relay device type
+        type: universal_switch  # Universal switch type
 ```
 
 #### Sensor platform

@@ -116,7 +116,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         device_address = (int(address2[0]), int(address2[1]))        
         channel_number = None
 
-        if SensorType.TEMPERATURE in [SensorType.TEMPERATURE,SensorType.VOLTAGE,SensorType.CURRENT,SensorType.POWER] and len(address2) > 2:    
+        if SensorType.TEMPERATURE in [SensorType.TEMPERATURE,SensorType.VOLTAGE,SensorType.CURRENT,SensorType.ACTIVE_POWER] and len(address2) > 2:    
             channel_number = int(address2[2])
                 
         if SensorType.TEMPERATURE == sensor_type and DeviceFamily.PANEL == device_family and len(address2) == 2:
@@ -245,7 +245,6 @@ class BusproSensor(SensorEntity):
             SensorType.HUMIDITY: SensorDeviceClass.HUMIDITY,
             SensorType.CURRENT: SensorDeviceClass.CURRENT,
             SensorType.VOLTAGE: SensorDeviceClass.VOLTAGE,
-            SensorType.POWER: SensorDeviceClass.POWER,
             SensorType.POWER_FACTOR: SensorDeviceClass.POWER_FACTOR,
             SensorType.ENERGY: SensorDeviceClass.ENERGY,
             SensorType.ACTIVE_POWER: SensorDeviceClass.POWER,
@@ -270,7 +269,6 @@ class BusproSensor(SensorEntity):
             SensorType.HUMIDITY: "%",
             SensorType.CURRENT: UnitOfElectricCurrent.AMPERE,
             SensorType.VOLTAGE: UnitOfElectricPotential.VOLT,
-            SensorType.POWER: UnitOfPower.WATT,
             SensorType.POWER_FACTOR: PERCENTAGE,
             SensorType.ENERGY: UnitOfEnergy.KILO_WATT_HOUR,
             SensorType.ACTIVE_POWER: UnitOfPower.WATT,
@@ -300,7 +298,7 @@ class BusproSensor(SensorEntity):
             channel = getattr(self._device, "_universal_switch_number", "N")
         elif self._sensor_type == SensorType.SINGLE_CHANNEL:
             channel = getattr(self._device, "_channel_number", "N") 
-        elif self._sensor_type in [SensorType.CURRENT, SensorType.VOLTAGE, SensorType.POWER, SensorType.POWER_FACTOR, SensorType.ENERGY]:
+        elif self._sensor_type in [SensorType.CURRENT, SensorType.VOLTAGE, SensorType.ACTIVE_POWER, SensorType.POWER_FACTOR, SensorType.ENERGY]:
             channel = getattr(self._device, "_channel_number", "N")
         else:
             channel = "N"

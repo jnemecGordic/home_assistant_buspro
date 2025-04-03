@@ -91,6 +91,27 @@ sensor:
         type: temperature
         offset: -20
         device: sensors_in_one
+      - address: "1.31.1"  # Power meter phase 1
+        name: "Power Meter P1"
+        type: active_power
+      - address: "1.31.1"
+        name: "Power Meter P1 Reactive"
+        type: reactive_power
+      - address: "1.31.1"
+        name: "Power Meter P1 Apparent" 
+        type: apparent_power
+      - address: "1.31.1"
+        name: "Power Meter P1 Voltage"
+        type: voltage
+      - address: "1.31.1"
+        name: "Power Meter P1 Current"
+        type: current
+      - address: "1.31.1"
+        name: "Power Meter P1 Energy"
+        type: energy
+      - address: "1.31.1"
+        name: "Power Meter P1 Power Factor"
+        type: power_factor
 ```
 + **devices** _(Required)_: A list of devices to set up
   + **address** _(string) (Required)_: The address of the sensor device on the format `<subnet ID>.<device ID>`
@@ -108,7 +129,17 @@ sensor:
       + panel
       + dlp
   + **offset** _(int) (Optional)_: Offset to be added to the sensor value. Some devices, like HDL-MSOUT.4W, require an offset of -20.
-  
+
+The power meter sensors support the following types:
+- `voltage` - Line voltage in Volts (V)
+- `current` - Line current in Amperes (A)  
+- `active_power` - Active/Real power in Watts (W)
+- `reactive_power` - Reactive power in Volt-amperes reactive (VAr)
+- `apparent_power` - Apparent power in Volt-amperes (VA)
+- `power_factor` - Power factor as percentage (%)
+- `energy` - Total energy consumption in kilowatt-hours (kWh)
+
+For power meters with multiple phases, use channel numbers 1-3 for individual phases and channel 4 for total values (where supported by the device).
 
 #### Binary sensor platform
 

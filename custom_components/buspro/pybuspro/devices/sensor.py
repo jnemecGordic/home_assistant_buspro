@@ -31,7 +31,7 @@ class Sensor(Device):
         self._sonic = None
         self._dry_contact_1_status = None
         self._dry_contact_2_status = None
-        self._universal_switch_status = OnOffStatus.OFF
+        self._universal_switch_status = SwitchStatusOnOff.OFF
         self._channel_status = 0
         self._switch_status = 0
 
@@ -117,31 +117,20 @@ class Sensor(Device):
                     _LOGGER.debug(f"Temperature {msg_type} received - temp: {self._current_temperature}")
                 self._call_device_updated()
 
-        elif telegram.operate_code == OperateCode.ReadStatusOfUniversalSwitchResponse:
+        elif telegram.operate_code in [OperateCode.ReadStatusOfUniversalSwitchResponse, OperateCode.UniversalSwitchControlResponse]:
             switch_number = telegram.payload[0]
-            universal_switch_status = telegram.payload[1]
-
+            status_enum = SwitchStatusOnOff(telegram.payload[1])
             if switch_number == self._universal_switch_number:
-                self._universal_switch_status = universal_switch_status
+                self._universal_switch_status = status_enum
                 if _LOGGER.isEnabledFor(logging.DEBUG):
-                    _LOGGER.debug(f"Universal switch status received for switch {switch_number} - status:{self._universal_switch_status}")            
+                    _LOGGER.debug(f"Universal switch status updated for switch {switch_number} - status:{status_enum}")
                 self._call_device_updated()
 
         elif telegram.operate_code == OperateCode.BroadcastStatusOfUniversalSwitch:
             if self._universal_switch_number is not None and self._universal_switch_number <= telegram.payload[0]:
-                self._universal_switch_status = telegram.payload[self._universal_switch_number]                
+                self._universal_switch_status = SwitchStatusOnOff(telegram.payload[self._universal_switch_number])                
                 if _LOGGER.isEnabledFor(logging.DEBUG):
                     _LOGGER.debug(f"Universal switch broadcast received for switch {self._universal_switch_number} - status:{self._universal_switch_status}")
-                self._call_device_updated()
-
-        elif telegram.operate_code == OperateCode.UniversalSwitchControlResponse:
-            switch_number = telegram.payload[0]
-            universal_switch_status = telegram.payload[1]
-
-            if switch_number == self._universal_switch_number:
-                self._universal_switch_status = universal_switch_status
-                if _LOGGER.isEnabledFor(logging.DEBUG):
-                    _LOGGER.debug(f"Channel status received for channel {self._channel_number} - status:{self._channel_status}")            
                 self._call_device_updated()
 
         elif telegram.operate_code in [OperateCode.ReadDryContactStatusResponse, OperateCode.ReadDryContactBroadcastStatusResponse]:
@@ -321,10 +310,7 @@ class Sensor(Device):
 
     @property
     def universal_switch_is_on(self):
-        if self._universal_switch_status == 1:
-            return True
-        else:
-            return False
+        return self._universal_switch_status == SwitchStatusOnOff.ON
 
     @property
     def single_channel_is_on(self):
